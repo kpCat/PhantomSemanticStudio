@@ -21,3 +21,5 @@ Ruling: выполняем checkpoint в точном root, без нового 
 Final verification: Build-Verify exit 0, 0 warnings/errors, 50 PASS / 0 FAIL. Свежий review обнаружил P1 SelectionChanged order: исправлено CurrentCellChanged + same-ID no-op + deferred restore/rebind. Интерактивный regression NOT_TESTED; BLOCKED UI/DPI остаётся видимым. Внешний review PENDING. Declined по task scope: Java parity/runtime gender/profanity и злонамеренная OS-level подмена путей; это ограничения, не safety guarantees.
 
 Ruling: XML disabled для всех кандидатов, поскольку полнота условий/profanity/runtime labels не доказана; разрешено IMPLEMENTATION §6. Цена решения: JSON-only review до отдельного server validator этапа. Minor findings не было.
+
+Feature checkpoint: 2a4f85af06938dd1aa7a4d9ff04b6f0238fbabcd (root commit, master), 65 exact staged paths. ZIP exact inventory и source equality PASS: 65 файлов, SHA-256 c5e6dcae64f817c54f701382881844bc3e8c3a7bdd07b2a85f1e25aee3374ae5. Closing report/plan receipt записывается отдельным обычным metadata commit после feature checkpoint, без изменения кода и без amend. Этот final receipt не является следующим task/slice.
