@@ -1,0 +1,9 @@
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+artifacts/
+workspace/
+reports/local/
+*.zip
