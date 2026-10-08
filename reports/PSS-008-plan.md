@@ -73,6 +73,8 @@ Final Release122/0, zero warnings/errors; focused A4/B8/C3, STA0044/0053/0062/00
 
 Physical UI100/150/VS NOT_TESTED, live LM BLOCKED_LM (loaded list[]/POST0). Final manual acceptance remains required; no gate self-approval. Publication exact allowlist76, ordinary commit/non-force main push and remote/public SHA equality are final authorized steps; no following Goal/Slice.
 
+Final publication orchestration correction: first ordinary commit36824f5 was made despite whitespace-gate failure in two new diagnostic logs. No push before repair. Original raw stdout retained privately; trailing spaces/blank EOF normalized only in those2 authored reports. A second ordinary commit records corrected evidence. No history rewrite; cumulative final index/base76 is checked before push. Production/Release/native gates unchanged.
+
 ## Historical preflight ledger
 
 Preflight shared interfaces: A consumes PackSnapshot only; B consumes its original stamps/approvals and emits immutable receipt; C consumes receipt and independently revalidates entire stage against current source. C never changes B receipt. Source contract read: actual normalizer codepoint iteration; pattern index exact normalized phrase or first/last literal word for value placeholders; template bucket includes mature boolean. Separate contract reviewer dispatched read-only.

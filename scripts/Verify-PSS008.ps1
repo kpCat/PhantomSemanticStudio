@@ -147,9 +147,10 @@ if ($GitScope -or $Staged) {
         if (@($changed + $untracked | Sort-Object -Unique).Count -ne $owned.Count) { throw 'Owned inventory differs from actual changes' }
         Write-Output ('PASS exact scope guard vs required base; owned=' + $owned.Count)
         if ($Staged) {
-            $stagedPaths = @(git diff --cached --name-only); if ($LASTEXITCODE -ne 0 -or $stagedPaths.Count -ne $owned.Count) { throw 'Staged count mismatch' }
+            # Complete index vs required base, including ordinary linear follow-up commits.
+            $stagedPaths = @(git diff --cached --name-only $base); if ($LASTEXITCODE -ne 0 -or $stagedPaths.Count -ne $owned.Count) { throw 'Staged count mismatch' }
             foreach ($path in $stagedPaths) { if ($owned -notcontains $path) { throw ('Unowned staged file: ' + $path) } }
-            git diff --cached --check; if ($LASTEXITCODE -ne 0) { throw 'Whitespace gate failed' }
+            git diff --cached --check $base; if ($LASTEXITCODE -ne 0) { throw 'Whitespace gate failed' }
             Write-Output ('PASS exact staged allowlist=' + $stagedPaths.Count + '; private/binary/keys excluded')
         }
     } finally { Pop-Location }

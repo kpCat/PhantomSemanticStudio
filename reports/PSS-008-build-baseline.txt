@@ -19,4 +19,3 @@ At C:\Users\ZBook\PhantomSemanticStudio\scripts\Build-Verify.ps1:11 char:32
 +                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : OperationStopped: (dotnet build failed: 1:String) [], RuntimeException
     + FullyQualifiedErrorId : dotnet build failed: 1
- 

@@ -13,4 +13,3 @@ At C:\Users\ZBook\PhantomSemanticStudio\scripts\Verify-PSS008.ps1:65 char:225
 +                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : OperationStopped: (FAIL guard: javac destdir:String) [], RuntimeException
     + FullyQualifiedErrorId : FAIL guard: javac destdir
- 
