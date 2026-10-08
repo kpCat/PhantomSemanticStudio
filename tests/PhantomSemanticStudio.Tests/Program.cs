@@ -10,10 +10,19 @@ internal static partial class Program
     private static int failed;
     private static readonly List<string> Failures = [];
 
+    [STAThread]
     private static async Task<int> Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "--source-smoke") return await SourceSmoke.RunAsync(args);
         if (args.Length > 0 && args[0] == "--pss-003-source") return Pss003Source(args);
+        if (args.Length > 0 && args[0] == "--pss-004-ui-fixture") return Pss004UiFixture(args);
+        if (args.Length > 0 && args[0] == "--pss-004-controls") return Pss004Controls();
+        if (args.Length > 0 && args[0] == "--pss-004")
+        {
+            Pss004();
+            Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--pss-003")
         {
             Pss003();
@@ -272,6 +281,7 @@ internal static partial class Program
         });
         await Pss002(snapshot, store);
         Pss003();
+        Pss004();
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;

@@ -1,6 +1,6 @@
 # Phantom Semantic Studio · 0.1
 
-Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md); история и ограничения PSS-002: [reports/PSS-002-final.md](reports/PSS-002-final.md).
+Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-004: [reports/PSS-004-final.md](reports/PSS-004-final.md), [UI evidence](reports/PSS-004-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
 
 В исходной поставке сборка C#, Visual Studio Designer, LM Studio и Java runtime не запускались. Этот исторический статус сохранён в BASELINE_VERIFICATION.md. PSS-001 выполняет реальные Windows-проверки; LM, Designer, runtime UI/DPI и Java имеют отдельные статусы в итоговом отчёте. Статические проверки структуры не заменяют компиляцию.
 
@@ -12,6 +12,7 @@
 Откройте `PhantomSemanticStudio.sln` в Visual Studio 2026 с .NET 10 / .NET desktop development. Startup project: `PhantomSemanticStudio.WinForms`.
 Откройте `src\PhantomSemanticStudio.WinForms\MainForm.cs` → «Открыть конструктор».
 Контролы находятся в `MainForm.Designer.cs`; конструктор формы не обращается к файлам/API. Все вкладки и controls объявлены статически, без циклов в InitializeComponent.
+Модальная форма выбора партии: `StageSelectionForm.cs` → «Открыть конструктор»; `.Designer.cs` и `.resx` вложены в проекте. Её конструктор тоже содержит только `InitializeComponent()`.
 
 Из PowerShell:
 ```
@@ -27,7 +28,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Verify.ps1
 5. «Конструктор»: выберите существующий act/topic, отношения, пол и стиль; напишите пожелания. Тип по умолчанию «Ответ (TEMPLATE)»; «Входная фраза (PATTERN)» создаёт только входы игрока, «Смешанный (MIXED)» допускает оба вида. Выбранный тип ограничивает JSON Schema и повторно проверяется локально у каждого item; неверный kind отклоняет всю партию. Старые GenerationRequest/замечания читаются с MIXED в Core; применение замечания сохраняет явный выбор UI. Партия по умолчанию 6, максимум 20. Контекст включает ограниченную выборку релевантных записей, не весь репозиторий.
 6. «Кандидаты»: проверьте, отредактируйте, сохраните и одобрите каждую нужную запись с отметкой ручного ревью. Входные фразы и ответы различаются. Ошибки не принимаются автоматически; неудачная генерация не запускает бесконечных повторов.
 7. «Экспорт для ревью»: прежний отдельный ZIP с одобренным JSON, baseline и замечаниями, **REVIEW_ONLY_NOT_SERVER_VALIDATED**. Эта кнопка не создаёт XML. **Java-validator NOT_RUN; не распаковывать поверх сервера.**
-8. «Создать изолированное XML-предложение»: отдельно подтвердите полный список APPROVED ID (до 20 в UI) и редакционную аттестацию. Весь выбранный batch отклоняется при несовместимой записи; никто не пропускается молча. Только Gender ANY, существующая разговорная topic/act-связка, без placeholders/markup/control, 160 UTF16 после нормализации для PATTERN и 240 UTF-8 bytes для TEMPLATE. Пользователь отдельно проверяет мат/adult, гендерные обороты и ложные игровые утверждения: автоматическое доказательство смысла отсутствует.
+8. «Создать изолированное XML-предложение»: в модальном окне вручную отметьте конкретные 1–20 APPROVED из любого числа одобрений. По умолчанию выбор пуст. Поиск по ID/тексту/виду/теме/act показывает первые 500 совпадений; скрытые отметки сохраняются, справа всегда доступен полный выбранный список с исходными текстами и отметками редактора. Старое одобрение или baseline и выбор >20 блокируют продолжение до ручного исправления выбора. Затем отдельно подтвердите точный прокручиваемый список (default «Нет») и редакционную аттестацию (default «Нет»). Отмена ничего не создаёт. Весь выбранный batch повторно проверяется и отклоняется при несовместимой записи; никто не пропускается молча. Только Gender ANY, существующая разговорная topic/act-связка, без placeholders/markup/control, 160 UTF16 после нормализации для PATTERN и 240 UTF-8 bytes для TEMPLATE. Пользователь отдельно проверяет мат/adult, гендерные обороты и ложные игровые утверждения: автоматическое доказательство смысла отсутствует.
 9. В `workspace/proposals/<id>/module/dist/game/data/phantoms` создаётся побайтная копия ровно импортированных файлов. Append только в `semantic/custom/my-social-topics.xml` и `conversation/custom/my-phrases.xml`, deterministic IDs и `override="false"`; existing overrides/comments сохраняются. Остальные SHA/bytes неизменны. Source fingerprint проверяется до/после, правка approval блокирует stage. Atomic .partial→finished; receipt хранит ID/hashes без raw текста. Статус **STAGED_UNVALIDATED / Java NOT_RUN / НЕ ДЛЯ УСТАНОВКИ**.
 
 Отдельная явная операторская проверка готового stage:
@@ -65,4 +66,4 @@ JSON экспорт только в workspace/exports; XML staging только 
 `reports/BASELINE_VERIFICATION.md` — честный статус исходной поставки.
 `BASELINE_MANIFEST.json` — SHA-256 каждого файла исходной поставки.
 
-После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-003; PSS-004 не начат.
+После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-004; PSS-005 не начат.

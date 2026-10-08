@@ -418,21 +418,25 @@ public partial class MainForm : Form
         await RunAsync("Подготавливаю XML только в отдельном workspace…", async token =>
         {
             var pack = Snapshot;
-            // Выбирается каждый APPROVED, включая устаревшие: stager отклонит всю партию.
-            var ids = session.Candidates.Where(c => c.Status == "APPROVED").Select(c => c.Id).ToArray();
-            if (ids.Length == 0) throw new InvalidDataException("Нет одобренных кандидатов для XML-предложения.");
-            // Огромный список нельзя скрывать усечением внутри MessageBox.
-            if (ids.Length > 20) throw new InvalidDataException("Для явного ревью XML-предложения выберите не более 20 APPROVED кандидатов. Остальные сначала пересмотрите в Кандидатах.");
-            txtExportLog.Text = "Выбранные ID:\r\n" + string.Join("\r\n", ids);
-            var selection = $"Создать отдельное XML-предложение для всех {ids.Length} APPROVED кандидатов?\r\n\r\n"
-                + string.Join("\r\n", ids) + "\r\n\r\nОдна несовместимая запись блокирует всю партию. НЕ ДЛЯ УСТАНОВКИ.";
-            if (MessageBox.Show(this, selection, "Подтверждение точного списка", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            using var selection = new StageSelectionForm();
+            selection.SetCandidates(session.Candidates, pack.Fingerprint);
+            if (selection.ShowDialog(this) != DialogResult.OK) return;
+            var ids = selection.SelectedIds;
+            txtExportLog.Text = "Выбранная партия (все ID и исходные тексты):\r\n\r\n" + selection.SelectedSummary;
+            // Scrollable exact-list confirmation: even 20 full texts remain available, default No.
+            using var confirmation = new StageSelectionForm();
+            confirmation.SetCandidates(session.Candidates, pack.Fingerprint);
+            confirmation.ConfirmExactSelection(ids);
+            var selectionConfirmed = confirmation.ShowDialog(this) == DialogResult.OK;
+            if (!selectionConfirmed) return;
             var editorial = "Я отдельно проверил каждый выбранный текст и подтверждаю:\r\n\r\n"
                 + "• нет мата и взрослого содержания;\r\n• нет оборотов, подходящих только одному полу;\r\n"
                 + "• нет ложных обещаний игровых действий, лута, телепортов или несуществующей памяти;\r\n"
                 + "• понимаю: НЕ ДЛЯ УСТАНОВКИ; Java и игровой runtime этим действием не проверяются.\r\n\r\nПодтвердить?";
-            if (MessageBox.Show(this, editorial, "Отдельная редакционная аттестация", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-            var result = await Task.Run(() => new IsolatedPackStager().Create(Store, pack, session.Candidates, ids, true, true, token), token);
+            var editorialConfirmed = MessageBox.Show(this, editorial, "Отдельная редакционная аттестация", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+            if (!editorialConfirmed) return;
+            var exactIds = StageBatchSelection.SelectExactIds(session.Candidates, ids);
+            var result = await Task.Run(() => new IsolatedPackStager().Create(Store, pack, session.Candidates, exactIds, selectionConfirmed, editorialConfirmed, token), token);
             txtExportLog.Text = $"{result.Status} / Java NOT_RUN\r\nНЕ ДЛЯ УСТАНОВКИ\r\n\r\n{result.Root}\r\n\r\n"
                 + "Создана отдельная физическая копия humanized-файлов с предложением custom XML. Исходный Semantic Pack не изменён. Java проверяется отдельно операторским скриптом; approval и session сохранены.";
             statusLabel.Text = "STAGED_UNVALIDATED. XML-предложение только в workspace, НЕ ДЛЯ УСТАНОВКИ.";
