@@ -39,6 +39,8 @@ partial class MainForm
             cmbGender = new System.Windows.Forms.ComboBox();
             lblRegister = new System.Windows.Forms.Label();
             cmbRegister = new System.Windows.Forms.ComboBox();
+            lblMode = new System.Windows.Forms.Label();
+            cmbMode = new System.Windows.Forms.ComboBox();
             lblInstruction = new System.Windows.Forms.Label();
             txtInstruction = new System.Windows.Forms.TextBox();
             lblWords = new System.Windows.Forms.Label();
@@ -229,12 +231,13 @@ partial class MainForm
             // lblTopic
             lblTopic.Name = "lblTopic";
             lblTopic.Location = new System.Drawing.Point(18, 94);
-            lblTopic.Size = new System.Drawing.Size(714, 24);
-            lblTopic.Text = "Тема, связанная с выбранным намерением";
+            lblTopic.Size = new System.Drawing.Size(354, 24);
+            lblTopic.Text = "Тема выбранного намерения";
             // cmbTopic
             cmbTopic.Name = "cmbTopic";
             cmbTopic.Location = new System.Drawing.Point(18, 120);
-            cmbTopic.Size = new System.Drawing.Size(726, 29);
+            cmbTopic.Size = new System.Drawing.Size(354, 29);
+            cmbTopic.DropDownWidth = 726;
             cmbTopic.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             cmbTopic.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             // lblBand
@@ -267,6 +270,28 @@ partial class MainForm
             cmbRegister.Location = new System.Drawing.Point(510, 186);
             cmbRegister.Size = new System.Drawing.Size(234, 29);
             cmbRegister.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            // lblMode
+            lblMode.Name = "lblMode";
+            lblMode.Location = new System.Drawing.Point(390, 94);
+            lblMode.Size = new System.Drawing.Size(354, 24);
+            lblMode.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            lblMode.Text = "Тип генерации — выберите явно";
+            // cmbMode
+            cmbMode.Name = "cmbMode";
+            cmbMode.Location = new System.Drawing.Point(390, 120);
+            cmbMode.Size = new System.Drawing.Size(354, 29);
+            cmbMode.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            cmbMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cmbMode.Items.AddRange(new object[] { "Ответ (TEMPLATE)", "Входная фраза (PATTERN)", "Смешанный (MIXED)" });
+            cmbMode.SelectedIndex = 0;
+            cmbAct.TabIndex = 0;
+            cmbTopic.TabIndex = 1;
+            cmbBand.TabIndex = 2;
+            cmbGender.TabIndex = 3;
+            cmbRegister.TabIndex = 4;
+            cmbMode.TabIndex = 5;
+            txtInstruction.TabIndex = 6;
+            txtWords.TabIndex = 7;
             // lblInstruction
             lblInstruction.Name = "lblInstruction";
             lblInstruction.Location = new System.Drawing.Point(18, 226);
@@ -801,6 +826,8 @@ partial class MainForm
             grpRequest.Controls.Add(cmbGender);
             grpRequest.Controls.Add(lblRegister);
             grpRequest.Controls.Add(cmbRegister);
+            grpRequest.Controls.Add(lblMode);
+            grpRequest.Controls.Add(cmbMode);
             grpRequest.Controls.Add(lblInstruction);
             grpRequest.Controls.Add(txtInstruction);
             grpRequest.Controls.Add(lblWords);
@@ -996,6 +1023,8 @@ partial class MainForm
     private System.Windows.Forms.ComboBox cmbGender = null!;
     private System.Windows.Forms.Label lblRegister = null!;
     private System.Windows.Forms.ComboBox cmbRegister = null!;
+    private System.Windows.Forms.Label lblMode = null!;
+    private System.Windows.Forms.ComboBox cmbMode = null!;
     private System.Windows.Forms.Label lblInstruction = null!;
     private System.Windows.Forms.TextBox txtInstruction = null!;
     private System.Windows.Forms.Label lblWords = null!;

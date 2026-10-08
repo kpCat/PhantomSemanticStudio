@@ -76,7 +76,18 @@ public sealed class Candidate
     public DateTimeOffset? ReviewedAtUtc { get; set; }
 }
 
-public sealed record GenerationRequest(string Topic, string Act, string Band, string Register, string Gender, string Instruction, string Words, int Count);
+public enum GenerationMode { TEMPLATE, PATTERN, MIXED }
+public sealed record GenerationRequest(string Topic, string Act, string Band, string Register, string Gender, string Instruction, string Words, int Count, GenerationMode Mode = GenerationMode.MIXED);
+public enum LmDiagnosticCode { CHECKED_MODEL_LIST, MODEL_NOT_LISTED, SERVER_OFFLINE, CONNECTION_ERROR, TIMEOUT, CANCELLED, ENDPOINT, AUTH, HTTP_ERROR, SCHEMA_REJECTED, BAD_RESPONSE, INVALID_SETTINGS, INVALID_REQUEST }
+public sealed record LmDiagnostic(LmDiagnosticCode Code, string Message)
+{
+    public override string ToString() => Code + ": " + Message;
+}
+// Не сохраняет исходное исключение: оно может содержать token, prompt или ответ сервера.
+public sealed class LmStudioException(LmDiagnostic diagnostic) : Exception(diagnostic.ToString())
+{
+    public LmDiagnostic Diagnostic { get; } = diagnostic;
+}
 public sealed record DraftItem(string Kind, string Text, string Reason);
 public enum IssueSeverity { Warning, Error }
 public sealed record ValidationIssue(IssueSeverity Severity, string Code, string Message);

@@ -28,18 +28,18 @@ internal static class SourceSmoke
                 using var http = LmStudioClient.CreateHttpClient(); var client = new LmStudioClient(http);
                 try
                 {
-                    var models = await client.ListModelsAsync(settings, "", CancellationToken.None);
-                    if (!models.Contains(settings.ModelId, StringComparer.Ordinal))
-                        throw new InvalidDataException("Exact model ID отсутствует в /models; другую модель не выбирали.");
+                    var check = await client.CheckModelAsync(settings, "", CancellationToken.None);
+                    if (check.Code != LmDiagnosticCode.CHECKED_MODEL_LIST)
+                        throw new LmStudioException(check);
                     var scope = snapshot.Entries.FirstOrDefault(e => e.Kind == "PATTERN" && e.Topic == "greeting" && !TextRules.IsFunctionalAct(e.Act))
                         ?? throw new InvalidDataException("Нет разговорного greeting pattern для targeted запроса.");
                     var request = new GenerationRequest(scope.Topic, scope.Act, "UNKNOWN", "NEUTRAL", "ANY",
-                        "Предложи шесть разных коротких разговорных реплик знакомства без игровых действий, условий, подстановок, матов и взрослого содержания.", "вечер, встреча", 6);
+                        "Предложи две разные короткие разговорные реплики знакомства без игровых действий, условий, подстановок, матов и взрослого содержания.", "вечер, встреча", 2, GenerationMode.TEMPLATE);
                     drafts = await client.GenerateAsync(settings, "", snapshot, request, CancellationToken.None);
-                    lmStatus = drafts.Count is >= 4 and <= 6 ? "PASS_STRICT_JSON_DRAFTS_ONLY" : "FAILED_CANDIDATE_COUNT";
+                    lmStatus = drafts.Count is >= 1 and <= 2 ? "PASS_STRICT_JSON_DRAFTS_ONLY" : "FAILED_CANDIDATE_COUNT";
                     lmDetail = $"Exact model {settings.ModelId}; один POST; {drafts.Count} JSON-кандидатов, никто не одобрен.";
                 }
-                catch (Exception e) { lmStatus = "BLOCKED_LM"; lmDetail = e.GetType().Name + ": " + e.Message; }
+                catch (LmStudioException e) { lmStatus = "BLOCKED_LM"; lmDetail = e.Diagnostic.ToString(); }
             }
         }
         catch (Exception e) { importError = e.GetType().Name + ": " + e.Message; }
@@ -54,10 +54,10 @@ internal static class SourceSmoke
                 Patterns = snapshot?.Entries.Count(e => e.Kind == "PATTERN"), Templates = snapshot?.Entries.Count(e => e.Kind == "TEMPLATE"),
                 Aliases = snapshot?.Entries.Count(e => e.Kind == "ALIAS"), Profanity = snapshot?.Entries.Count(e => e.Kind == "PROFANITY"),
                 snapshot?.Topics, snapshot?.Acts, snapshot?.Warnings, SourceBeforeAfterEqual = equal,
-                Before = before, After = after, LM = lmStatus, LMDetail = lmDetail, Drafts = drafts,
+                Before = before, After = after, LM = lmStatus, LMDetail = lmDetail, DraftCount = drafts.Count,
                 Approval = "NONE", JavaValidator = "NOT_RUN", Export = "REVIEW_ONLY_NOT_SERVER_VALIDATED"
             };
-            File.WriteAllText(Path.Combine(output, "PSS-001-source-smoke.json"), JsonSerializer.Serialize(evidence, WorkspaceStore.JsonOptions), new UTF8Encoding(false));
+            File.WriteAllText(Path.Combine(output, "PSS-002-source-smoke.json"), JsonSerializer.Serialize(evidence, WorkspaceStore.JsonOptions), new UTF8Encoding(false));
             Console.WriteLine($"Import={(importError == null ? "PASS" : "FAILED")}; files={snapshot?.Files.Count}; patterns={snapshot?.Entries.Count(e => e.Kind == "PATTERN")}; templates={snapshot?.Entries.Count(e => e.Kind == "TEMPLATE")}; fingerprint={snapshot?.Fingerprint}");
             Console.WriteLine($"Source before/after equal={equal}; LM={lmStatus}; {lmDetail}; {importError}");
             if (!equal) importError = "Source stamps differ";

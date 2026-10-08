@@ -45,6 +45,14 @@ public partial class MainForm : Form
         await RunAsync("Открываю собственный workspace…", async token =>
         {
             var workspace = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PhantomSemanticStudio", "workspace");
+            // Изолированный UI smoke: process-only override, только artifacts собственной source-сборки.
+            var smokeWorkspace = Environment.GetEnvironmentVariable("PSS_UI_SMOKE_WORKSPACE");
+            if (!string.IsNullOrEmpty(smokeWorkspace))
+            {
+                var artifacts = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../artifacts"));
+                if (!PathSafety.IsWithin(smokeWorkspace, artifacts)) throw new InvalidDataException("UI smoke workspace должен быть внутри artifacts Studio.");
+                workspace = smokeWorkspace;
+            }
             store = new WorkspaceStore(workspace, settings.HighFiveRoot);
             settings = Store.LoadSettings(); settings.Validate(); Store.ProtectSource(settings.HighFiveRoot);
             session = await Task.Run(Store.LoadSession, token);
@@ -132,10 +140,9 @@ public partial class MainForm : Form
     {
         await RunAsync("Проверяю локальный LM Studio…", async token =>
         {
-            var updated = ReadSettings(); var models = await Model.ListModelsAsync(updated, txtApiKey.Text, token);
-            txtSettingsResult.Text = models.Contains(updated.ModelId, StringComparer.Ordinal)
-                ? "API отвечает. Указанный model identifier присутствует. Это ещё не проверка реальной генерации."
-                : "API отвечает, но указанный идентификатор не найден. Доступны:" + Environment.NewLine + string.Join(Environment.NewLine, models.Take(15));
+            var diagnostic = await Model.CheckModelAsync(ReadSettings(), txtApiKey.Text, token);
+            txtSettingsResult.Text = diagnostic.ToString();
+            statusLabel.Text = diagnostic.ToString();
         });
     }
     private async void Generate_Click(object? sender, EventArgs e)
@@ -143,7 +150,8 @@ public partial class MainForm : Form
         await RunAsync("Gemma создаёт черновики. Автоматического одобрения нет…", async token =>
         {
             var pack = Snapshot; var configured = ReadSettings();
-            var request = new GenerationRequest(Key(cmbTopic), Key(cmbAct), Key(cmbBand), Key(cmbRegister), Key(cmbGender), txtInstruction.Text.Trim(), txtWords.Text.Trim(), (int)nudCount.Value);
+            var mode = cmbMode.SelectedIndex switch { 0 => GenerationMode.TEMPLATE, 1 => GenerationMode.PATTERN, 2 => GenerationMode.MIXED, _ => throw new InvalidDataException("Выберите тип генерации.") };
+            var request = new GenerationRequest(Key(cmbTopic), Key(cmbAct), Key(cmbBand), Key(cmbRegister), Key(cmbGender), txtInstruction.Text.Trim(), txtWords.Text.Trim(), (int)nudCount.Value, mode);
             var drafts = await Model.GenerateAsync(configured, txtApiKey.Text, pack, request, token);
             var additions = drafts.Select(d => new Candidate
             {
@@ -156,7 +164,8 @@ public partial class MainForm : Form
             token.ThrowIfCancellationRequested();
             var next = new SessionState { Candidates = all, Lessons = session.Lessons, ScopedLessons = session.ScopedLessons }; Store.SaveSession(next); session = next;
             BindCandidates(additions.FirstOrDefault()?.Id); tabs.SelectedTab = tabCandidates;
-            statusLabel.Text = $"Добавлено {additions.Count} черновиков; {invalid} с блокирующими замечаниями. Ни один не одобрен автоматически.";
+            var summary = $"DRAFT: добавлено {additions.Count}; с блокирующими замечаниями: {invalid}. Тип: {mode}; модель: {configured.ModelId}. Требуется ручное ревью; никто не одобрен автоматически.";
+            statusLabel.Text = summary; txtValidation.Text = summary + "\r\n\r\n" + txtValidation.Text;
         });
     }
     private void ToCandidates_Click(object? sender, EventArgs e) => tabs.SelectedTab = tabCandidates;
@@ -409,6 +418,12 @@ public partial class MainForm : Form
         if (busy) return;
         busy = true; operation = new CancellationTokenSource(); tabs.Enabled = false; btnCancel.Enabled = true; UseWaitCursor = true; statusLabel.Text = caption;
         try { await action(operation.Token); }
+        catch (LmStudioException ex)
+        {
+            statusLabel.Text = ex.Diagnostic.ToString();
+            txtSettingsResult.Text = ex.Diagnostic.ToString();
+            MessageBox.Show(this, ex.Diagnostic.ToString(), "LM Studio — диагностика", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
         catch (OperationCanceledException) { statusLabel.Text = "Операция отменена или истёк таймаут. Автоматического повтора нет."; }
         catch (Exception ex)
         {

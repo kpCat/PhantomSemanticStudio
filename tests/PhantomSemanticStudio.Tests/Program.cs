@@ -13,6 +13,14 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "--source-smoke") return await SourceSmoke.RunAsync(args);
+        if (args.Length > 0 && args[0] == "--pss-002")
+        {
+            using var focused = new Fixture();
+            using var workspace = new WorkspaceStore(Path.Combine(focused.Root, "studio"), focused.Module);
+            await Pss002(new PackReader().Load(focused.Module), workspace);
+            Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--negative-control")
         {
             Test("intentional assertion inside negative control must fail", () => Throws(() => True(false)));
@@ -255,9 +263,166 @@ internal static class Program
             using var http = new HttpClient(new SlowHandler()) { Timeout = Timeout.InfiniteTimeSpan };
             await ThrowsAsync(() => new LmStudioClient(http).ListModelsAsync(new StudioSettings { HighFiveRoot = fixture.Module, TimeoutSeconds = 15 }, "", CancellationToken.None));
         });
+        await Pss002(snapshot, store);
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;
+    }
+    private static async Task Pss002(PackSnapshot snapshot, WorkspaceStore store)
+    {
+        var settings = new StudioSettings { HighFiveRoot = snapshot.ModuleRoot, ModelId = "exact-test-model" };
+        GenerationRequest Request(int mode) => JsonSerializer.Deserialize<GenerationRequest>(JsonSerializer.Serialize(new
+        {
+            Topic = "greeting", Act = "greet.reply", Band = "FAMILIAR", Register = "CASUAL", Gender = "FEMALE",
+            Instruction = "Две короткие реплики", Words = "вечер", Count = 2, Mode = mode
+        }))!;
+        await TestAsync("PSS-002 single kind schema and local whole batch rejection", async () =>
+        {
+            for (var mode = 0; mode < 2; mode++)
+            {
+                var kind = mode == 0 ? "TEMPLATE" : "PATTERN";
+                var other = mode == 0 ? "PATTERN" : "TEMPLATE";
+                using var handler = new RecordingHandler(Envelope(kind)); using var http = new HttpClient(handler);
+                var drafts = await new LmStudioClient(http).GenerateAsync(settings, "", snapshot, Request(mode), CancellationToken.None);
+                Equal(kind, drafts.Single().Kind); Equal(1, handler.Calls);
+                using var payload = JsonDocument.Parse(handler.Payload!);
+                var root = payload.RootElement;
+                Equal("exact-test-model", root.GetProperty("model").GetString());
+                True(!root.TryGetProperty("tools", out _) && !root.TryGetProperty("functions", out _));
+                var kinds = root.GetProperty("response_format").GetProperty("json_schema").GetProperty("schema")
+                    .GetProperty("properties").GetProperty("items").GetProperty("items").GetProperty("properties").GetProperty("kind").GetProperty("enum");
+                Equal(1, kinds.GetArrayLength()); Equal(kind, kinds[0].GetString());
+                using var user = JsonDocument.Parse(root.GetProperty("messages")[1].GetProperty("content").GetString()!);
+                Equal("FEMALE", user.RootElement.GetProperty("Gender").GetString());
+                Equal("FAMILIAR", user.RootElement.GetProperty("Band").GetString());
+                Equal("CASUAL", user.RootElement.GetProperty("Register").GetString());
+                using var mismatch = new HttpClient(new RecordingHandler(Envelope(kind, other)));
+                await ThrowsAsync(() => new LmStudioClient(mismatch).GenerateAsync(settings, "", snapshot, Request(mode), CancellationToken.None));
+            }
+        });
+        await TestAsync("PSS-002 MIXED legacy requests lessons and invalid enum", async () =>
+        {
+            var legacy = new GenerationRequest("greeting", "greet.reply", "UNKNOWN", "NEUTRAL", "ANY", "Новые реплики", "", 2);
+            var lesson = new EditorialLesson { Topic = "greeting", Act = "greet.reply", Text = "Новое замечание", SourceFingerprint = snapshot.Fingerprint };
+            foreach (var request in new[] { legacy, lesson.ToRequest(snapshot, false), Request(2) })
+            {
+                using var http = new HttpClient(new RecordingHandler(Envelope("TEMPLATE", "PATTERN")));
+                Equal(2, (await new LmStudioClient(http).GenerateAsync(settings, "", snapshot, request, CancellationToken.None)).Count);
+            }
+            using var handler = new RecordingHandler(Envelope("TEMPLATE")); using var invalid = new HttpClient(handler);
+            await ThrowsAsync(() => new LmStudioClient(invalid).GenerateAsync(settings, "", snapshot, Request(99), CancellationToken.None));
+            Equal(0, handler.Calls);
+        });
+        await TestAsync("PSS-002 HTTP categories redact body token and exception", async () =>
+        {
+            const string secret = "test-secret-never-diagnostic";
+            foreach (var (status, code) in new[] { (401, "AUTH"), (403, "AUTH"), (404, "ENDPOINT"), (500, "HTTP_ERROR"), (400, "SCHEMA_REJECTED"), (302, "HTTP_ERROR") })
+            {
+                using var handler = new RecordingHandler(secret, (HttpStatusCode)status); using var http = new HttpClient(handler);
+                try
+                {
+                    if (status == 400) await new LmStudioClient(http).GenerateAsync(settings, secret, snapshot, Request(0), CancellationToken.None);
+                    else await new LmStudioClient(http).ListModelsAsync(settings, secret, CancellationToken.None);
+                    True(false);
+                }
+                catch (Exception e) when (e is not AssertionFailure) { True(e.Message.StartsWith(code + ":", StringComparison.Ordinal)); True(!e.ToString().Contains(secret, StringComparison.Ordinal)); }
+                Equal(1, handler.Calls);
+            }
+            using var offline = new HttpClient(new FaultHandler(new HttpRequestException(secret, new System.Net.Sockets.SocketException(10061))));
+            try { await new LmStudioClient(offline).ListModelsAsync(settings, secret, CancellationToken.None); True(false); }
+            catch (Exception e) when (e is not AssertionFailure) { True(e.Message.StartsWith("SERVER_OFFLINE:", StringComparison.Ordinal)); True(!e.ToString().Contains(secret, StringComparison.Ordinal)); }
+        });
+        await TestAsync("PSS-002 catalogue rejects malformed duplicate fields and oversize", async () =>
+        {
+            foreach (var body in new[] { "null", "{\"data\":[{}]}", "{\"data\":[],\"data\":[]}", "{\"data\":[{\"id\":\"a\",\"id\":\"b\"}]}", "{\"data\":[],\"private-prompt\":", new string('x', 1024 * 1024 + 1) })
+            {
+                using var handler = new RecordingHandler(body); using var http = new HttpClient(handler);
+                try { await new LmStudioClient(http).ListModelsAsync(settings, "", CancellationToken.None); True(false); }
+                catch (Exception e) when (e is not AssertionFailure) { True(e.Message.StartsWith("BAD_RESPONSE:", StringComparison.Ordinal)); True(!e.ToString().Contains("private-prompt", StringComparison.Ordinal)); }
+                Equal(1, handler.Calls);
+            }
+        });
+        await TestAsync("PSS-002 exact catalogue check is advisory GET only and endpoint guards", async () =>
+        {
+            foreach (var host in new[] { "localhost", "127.0.0.1", "[::1]" }) LmStudioClient.ValidateEndpoint("http://" + host + ":1234/v1");
+            foreach (var endpoint in new[] { "http://localhost.example.com/v1", "http://127.0.0.1:1234/v1#x", "http://localhost:1234/wrong" })
+                Throws(() => LmStudioClient.ValidateEndpoint(endpoint));
+            foreach (var found in new[] { true, false })
+            {
+                using var handler = new RecordingHandler(JsonSerializer.Serialize(new { data = new[] { new { id = found ? settings.ModelId : "other-model" } } }));
+                using var http = new HttpClient(handler);
+                var diagnostic = await new LmStudioClient(http).CheckModelAsync(settings, "", CancellationToken.None);
+                Equal(found ? LmDiagnosticCode.CHECKED_MODEL_LIST : LmDiagnosticCode.MODEL_NOT_LISTED, diagnostic.Code);
+                if (found) True(diagnostic.Message.Contains("JIT", StringComparison.Ordinal) && diagnostic.Message.Contains("ещё не проверены", StringComparison.Ordinal));
+                Equal(1, handler.Calls); True(handler.Payload == null);
+            }
+        });
+        await TestAsync("PSS-002 positive drafts duplicate warnings and JSON review only", async () =>
+        {
+            using var http = new HttpClient(new RecordingHandler(Envelope("TEMPLATE", "TEMPLATE")));
+            var drafts = await new LmStudioClient(http).GenerateAsync(settings, "", snapshot, Request(0), CancellationToken.None);
+            var candidates = drafts.Select(d => CandidateOf(snapshot, d.Text)).ToList();
+            candidates[1].Text = candidates[0].Text.ToUpperInvariant();
+            store.SaveSession(new SessionState { Candidates = candidates });
+            True(store.LoadSession().Candidates.All(c => c.Status == "DRAFT" && !CandidateReview.IsCurrent(c)));
+            var issues = CandidateValidator.Validate(candidates[1], snapshot, candidates);
+            True(issues.Any(i => i.Code == "EXACT_DUPLICATE" && i.Severity == IssueSeverity.Error));
+            True(issues.Any(i => i.Code == "SEMANTIC_NOT_CHECKED"));
+            Throws(() => new ReviewExporter().Export(store, snapshot, candidates));
+        });
+        await TestAsync("PSS-002 envelope rejects duplicate refusal non-string and multi-choice", async () =>
+        {
+            var valid = Envelope("TEMPLATE");
+            foreach (var body in new[] { valid.Replace("\"choices\":", "\"choices\":[],\"choices\":"),
+                valid.Replace("\"finish_reason\":\"stop\"", "\"finish_reason\":\"length\",\"finish_reason\":\"stop\""),
+                valid.Replace("\"content\":", "\"refusal\":\"private-refusal\",\"content\":"),
+                "{\"choices\":[{\"finish_reason\":5,\"message\":{\"content\":{}}}]}", "{\"choices\":[{},{}]}" })
+            {
+                using var http = new HttpClient(new RecordingHandler(body));
+                await ThrowsAsync(() => new LmStudioClient(http).GenerateAsync(settings, "", snapshot, Request(0), CancellationToken.None));
+            }
+        });
+        await TestAsync("PSS-002 failed generation preserves saved session and approval", async () =>
+        {
+            var existing = CandidateOf(snapshot, "Пока вечер не закончился, расскажи что-нибудь.");
+            CandidateReview.Approve(existing, snapshot, [], "Проверено для JSON ревью");
+            store.SaveSession(new SessionState { Candidates = [existing], Lessons = ["Старое замечание"] });
+            var path = Path.Combine(store.Root, "session.json"); var before = File.ReadAllBytes(path);
+            using var http = new HttpClient(new RecordingHandler(Envelope("TEMPLATE", "PATTERN")));
+            await ThrowsAsync(() => new LmStudioClient(http).GenerateAsync(settings, "", snapshot, Request(0), CancellationToken.None));
+            True(before.SequenceEqual(File.ReadAllBytes(path))); True(CandidateReview.IsCurrent(store.LoadSession().Candidates.Single()));
+            Equal("Старое замечание", store.LoadSession().Lessons.Single());
+        });
+        await TestAsync("PSS-002 external cancel and timeout are distinct without retry", async () =>
+        {
+            using var cancel = new CancellationTokenSource(); cancel.Cancel();
+            using var http = new HttpClient(new SlowHandler()) { Timeout = Timeout.InfiniteTimeSpan };
+            try { await new LmStudioClient(http).ListModelsAsync(settings, "", cancel.Token); True(false); }
+            catch (Exception e) when (e is not AssertionFailure) { True(e.Message.StartsWith("CANCELLED:", StringComparison.Ordinal)); }
+            using var timeoutHttp = new HttpClient(new FaultHandler(new TaskCanceledException("private-request")));
+            try { await new LmStudioClient(timeoutHttp).ListModelsAsync(settings, "", CancellationToken.None); True(false); }
+            catch (Exception e) when (e is not AssertionFailure) { True(e.Message.StartsWith("TIMEOUT:", StringComparison.Ordinal)); True(!e.ToString().Contains("private-request", StringComparison.Ordinal)); }
+        });
+    }
+    private static string Envelope(params string[] kinds) => JsonSerializer.Serialize(new
+    {
+        choices = new[] { new { finish_reason = "stop", message = new { content = JsonSerializer.Serialize(new
+        { items = kinds.Select((kind, i) => new { kind, text = "Вечер ещё оставил время на разговор " + i, reason = "Короткая новая фраза" }) }) } } }
+    });
+    private sealed class RecordingHandler(string body, HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
+    {
+        public int Calls { get; private set; }
+        public string? Payload { get; private set; }
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested(); Calls++;
+            Payload = request.Content == null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+            return new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+        }
+    }
+    private sealed class FaultHandler(Exception error) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => Task.FromException<HttpResponseMessage>(error);
     }
     private static Candidate CandidateOf(PackSnapshot s,string text)=>new() { Text=text, Topic="greeting", Act="greet.reply", Kind="TEMPLATE", Band="UNKNOWN", Register="NEUTRAL", SourceFingerprint=s.Fingerprint };
     private static void Test(string name,Action action) { try { action(); passed++; Console.WriteLine("PASS "+name); } catch(Exception e) { failed++; Failures.Add(name+": "+e); Console.WriteLine("FAIL "+name+": "+e.Message); } }
