@@ -1,6 +1,6 @@
 # Phantom Semantic Studio · 0.1
 
-Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Результаты checkpoint PSS-001 и ограничения: [reports/PSS-001-final.md](reports/PSS-001-final.md).
+Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-002 и ограничения: [reports/PSS-002-final.md](reports/PSS-002-final.md); история PSS-001: [reports/PSS-001-final.md](reports/PSS-001-final.md).
 
 В исходной поставке сборка C#, Visual Studio Designer, LM Studio и Java runtime не запускались. Этот исторический статус сохранён в BASELINE_VERIFICATION.md. PSS-001 выполняет реальные Windows-проверки; LM, Designer, runtime UI/DPI и Java имеют отдельные статусы в итоговом отчёте. Статические проверки структуры не заменяют компиляцию.
 
@@ -40,7 +40,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Verify.ps1
 Не меняются ни старые v1/v2, ни действующий v3, ни custom. Расширение реального пака — отдельный будущий проверенный этап.
 
 ## Что пока не готово
-- Полный визуальный smoke 100%/150% DPI и реальный LM Studio: точные результаты и незакрытые gates приведены в отчёте PSS-001.
+- Полный визуальный smoke 100%/150% DPI и реальный LM Studio: точные результаты и незакрытые gates приведены в отчётах PSS-002 final/ui. Local build/console/static PASS не заменяет живую Gemma или UI acceptance.
 - Полноценный смысловой поиск повторов, грамматический анализ и истинность игровых фактов. Реализованы точные повторы и лексические кандидаты на сходство, не магическая гарантия отсутствия синонимов.
 - Полноценная Java-parity и штатный validator на изолированной копии. До этого экспорт REVIEW_ONLY.
 - Runtime gender/persona-фильтры. JSON сохраняет редакционные ограничения; генерация XML отключена для всех кандидатов.

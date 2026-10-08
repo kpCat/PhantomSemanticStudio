@@ -36,7 +36,7 @@
 - [x] 2. Models/LmStudioClient: typed mode/diagnostic, safe messages, post-schema local validation; targeted GREEN 9/0, exit 0.
 - [x] 3. Designer selector + MainForm diagnostics, README; SourceSmoke PSS-002 output/count2, без raw model output. Изолированный process-only UI smoke path внутри artifacts, обычные PathSafety guards сохранены.
 - [x] 4. Source/live: import PASS, 65/65 stamps equal, GET refused → BLOCKED_LM/0 POST. UI startup PARTIAL, input/capture unavailable → full UI/DPI NOT_TESTED. Свежий reviewer: один Important sizing defect; static RED→GREEN 0px→62px. Финальная Build-Verify exit 0, 0 warnings/errors, 59/0.
-- [ ] 5. Две отдельные Cyrillic проверки, exact allowlist/diff guard, отчёты и ZIP manifest; normal commit/push HEAD:refs/heads/main, remote SHA verification; STOP.
+- [x] 5. Две отдельные Cyrillic проверки PASS; final source equality 65/65; task package SHA/bytes unchanged; exact allowlist/index 29 paths; ZIP 87 files verified. Feature commit fb1f4a2cc252f2007bf46c7b31227d833852e7ba; normal push exit 0, remote SHA equal. Закрывающий metadata receipt и final ZIP proof — artifacts/PSS-002-checkpoint.json / PSS-002-zip-manifest.json. STOP.
 
 ## Bounded scope exception
 

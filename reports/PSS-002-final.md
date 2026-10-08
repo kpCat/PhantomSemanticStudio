@@ -17,7 +17,7 @@
 | Live LM / Gemma | **BLOCKED_LM / SERVER_OFFLINE**, connection refused 127.0.0.1:1234; 1 GET, 0 POST, 0 retries |
 | Java / Ant / server / DB | NOT_RUN по scope |
 | Export | REVIEW_ONLY_NOT_SERVER_VALIDATED; JSON, DO_NOT_INSTALL, no XML/install |
-| Git publication / review ZIP | Receipt добавляется после обычного commit/push; ZIP manifest/checkpoint сохраняются отдельно в artifacts для исключения self-reference |
+| Git publication / review ZIP | Feature commit/push PASS, remote SHA equal (receipt ниже). 87-file review ZIP verified; окончательные manifest/checkpoint отдельно в artifacts для исключения self-reference |
 
 ## Реализация и exact scope
 
@@ -81,3 +81,13 @@ git diff -- tests/PhantomSemanticStudio.Tests/Program.cs tests/PhantomSemanticSt
 Контракт дополнительно сверён с первичными [LM Studio models/JIT](https://lmstudio.ai/docs/developer/openai-compat/models) и [Structured Output](https://lmstudio.ai/docs/developer/openai-compat/structured-output). Они подтверждают формат API, не готовность конкретной локальной Gemma.
 
 **STOP.** PSS-003, Java oracle, server-ready XML и публикация в L2J не начаты. Незакрытые внешние gates не приняты автоматически.
+
+## Закрывающий receipt
+
+Feature checkpoint: **fb1f4a2cc252f2007bf46c7b31227d833852e7ba**, parent **87755c86421c9a320c7bc1f5f7682fb13c95332e**, branch **master**. Exact index allowlist — 29 paths, staged diff check PASS. Ordinary commit exit 0; `git push origin HEAD:refs/heads/main` exit 0 в **https://github.com/kpCat/PhantomSemanticStudio.git**; `git ls-remote origin refs/heads/main` подтвердил **fb1f4a2cc252f2007bf46c7b31227d833852e7ba**, равный local HEAD. L2J Git не использован.
+
+Перед commit staged diff check обнаружил trailing whitespace в двух новых stdout evidence (exit 2); guard остановил commit. Технически нормализованы UTF-8 и trailing whitespace только task-owned .txt, включая CRLF-aware trim; содержимое assertions/diagnostics не менялось. Повторный staged check exit 0. Source task package SHA/bytes не менялись.
+
+ZIP через New-ReviewBundle и Verify-PSS002 прошёл: **87 files**, exact inventory/owned paths/per-file SHA/bytes, без workspace/settings/session/token files/binaries. После закрывающего receipt canonical ZIP пересобирается из финальных файлов и повторно проверяется тем же validator. Итоговый digest и полный manifest — **artifacts/PSS-002-zip-manifest.json**. Финальный metadata SHA и remote equality — **artifacts/PSS-002-checkpoint.json**; receipt внешний, потому что commit не может содержать собственный SHA.
+
+Закрывающий обычный metadata commit: `git add -- README_RU.md reports/PSS-002-final.md reports/PSS-002-plan.md`; `git diff --cached --name-only`; `git diff --cached --check`; `git commit -m "docs(pss): record PSS-002 checkpoint evidence"`; `git push origin HEAD:refs/heads/main`; `git rev-parse HEAD`; `git ls-remote origin refs/heads/main`; `git status --porcelain=v1 -uall`. Они служат только receipt и актуальной ссылке README; код после финальной Build-Verify не менялся.
