@@ -13,6 +13,18 @@ internal static partial class Program
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--pss-005-controls") return Pss005Controls();
+        if (args.Length > 0 && args[0] == "--pss-005-live") return await Pss005Live();
+        if (args.Length > 0 && args[0] == "--pss-005-source") return Pss005Source(args);
+        if (args.Length > 0 && args[0] == "--pss-005-ui-fixture") return Pss005UiFixture(args);
+        if (args.Length > 0 && args[0] == "--pss-005")
+        {
+            Pss005Offline();
+            await Pss005Http();
+            await Pss005Persistence();
+            Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--source-smoke") return await SourceSmoke.RunAsync(args);
         if (args.Length > 0 && args[0] == "--pss-003-source") return Pss003Source(args);
         if (args.Length > 0 && args[0] == "--pss-004-ui-fixture") return Pss004UiFixture(args);
@@ -282,6 +294,9 @@ internal static partial class Program
         await Pss002(snapshot, store);
         Pss003();
         Pss004();
+        Pss005Offline();
+        await Pss005Http();
+        await Pss005Persistence();
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;

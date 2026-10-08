@@ -72,6 +72,7 @@ public static class CandidateReview
     }
     public static void Edit(Candidate c, string text)
     {
+        c.SemanticReview = null;
         c.Text = text.Trim(); c.Status = "DRAFT"; c.ApprovedFingerprint = ""; c.ReviewedAtUtc = null; c.ReviewNote = "";
     }
     public static void Reject(Candidate c)

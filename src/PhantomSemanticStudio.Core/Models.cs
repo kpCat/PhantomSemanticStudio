@@ -56,6 +56,7 @@ public sealed record PackSnapshot
 
 public sealed class Candidate
 {
+    public SemanticReviewEvidence? SemanticReview { get; set; }
     public Candidate Copy() => (Candidate)MemberwiseClone();
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Kind { get; set; } = "TEMPLATE";
@@ -77,6 +78,24 @@ public sealed class Candidate
 }
 
 public enum GenerationMode { TEMPLATE, PATTERN, MIXED }
+public sealed record SemanticVerdict(string RefKey, string ReferencedTextHash, string Kind, string SourceFile,
+    int SourceLine, bool IsPeer, string Relation, string Reason);
+public sealed record SemanticReviewEvidence
+{
+    public string Status { get; init; } = "MODEL_ADVISORY_NOT_VERIFIED";
+    public string Coverage { get; init; } = "COVERAGE_LIMITED";
+    public string CandidateFingerprint { get; init; } = "";
+    public string SourceFingerprint { get; init; } = "";
+    public string SourceStateFingerprint { get; init; } = "";
+    public string PeersFingerprint { get; init; } = "";
+    public string ShortlistFingerprint { get; init; } = "";
+    public string ModelId { get; init; } = "";
+    public DateTimeOffset CreatedAtUtc { get; init; } = DateTimeOffset.UtcNow;
+    public int TotalConsidered { get; init; }
+    public int ScopeConsidered { get; init; }
+    public int MaxMatches { get; init; } = 12;
+    public IReadOnlyList<SemanticVerdict> Verdicts { get; init; } = Array.Empty<SemanticVerdict>();
+}
 public sealed record GenerationRequest(string Topic, string Act, string Band, string Register, string Gender, string Instruction, string Words, int Count, GenerationMode Mode = GenerationMode.MIXED);
 public enum LmDiagnosticCode { CHECKED_MODEL_LIST, MODEL_NOT_LISTED, SERVER_OFFLINE, CONNECTION_ERROR, TIMEOUT, CANCELLED, ENDPOINT, AUTH, HTTP_ERROR, SCHEMA_REJECTED, BAD_RESPONSE, INVALID_SETTINGS, INVALID_REQUEST }
 public sealed record LmDiagnostic(LmDiagnosticCode Code, string Message)

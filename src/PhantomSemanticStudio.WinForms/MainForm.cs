@@ -21,6 +21,7 @@ public partial class MainForm : Form
     private bool bindingCandidates;
     private bool restoringSelection;
     private bool selectionPending;
+    private bool showingCandidate;
     private sealed record LessonChoice(EditorialLesson Lesson, string Label);
 
     // Важно для Visual Studio Designer: здесь нет IO, сервисов, DI или построения controls.
@@ -234,10 +235,100 @@ public partial class MainForm : Form
     }
     private void ShowCandidate(Candidate? candidate)
     {
+        showingCandidate = true;
         editingCandidate = candidate;
         txtCandidateText.Text = candidate?.Text ?? ""; txtReviewNote.Text = candidate?.ReviewNote ?? "";
+        showingCandidate = false;
         lblSelected.Text = candidate == null ? "Выберите кандидата." : $"{candidate.Id} • {candidate.Act} • {candidate.Band} / {candidate.Register}";
         txtValidation.Text = candidate == null ? "Нет выбранного кандидата." : "Нажмите «Проверить».\r\n\r\nОбоснование модели (не проверка):\r\n" + candidate.Rationale;
+        if (candidate?.SemanticReview != null)
+        {
+            if (snapshot == null) { txtValidation.Text = "STALE: источник ещё не импортирован. Сохранённый совет не считается действующим."; return; }
+            try
+            {
+                // Explicit candidate selection: read-only freshness check, no timers/model calls.
+                var fresh = reader.Load(snapshot.ModuleRoot);
+                var shortlist = SemanticDuplicateScout.Search(fresh, candidate, session.Candidates, candidate.SemanticReview.MaxMatches);
+                var current = SemanticDuplicateScout.IsEvidenceCurrent(candidate, fresh, session.Candidates, candidate.SemanticReview);
+                txtValidation.Text = FormatSemanticShortlist(candidate, shortlist, candidate.SemanticReview, current);
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.Xml.XmlException or System.Text.DecoderFallbackException)
+            { txtValidation.Text = "STALE: актуальность источника/списка не подтверждена. Сохранённый совет не считается действующим. Выполните новый импорт и локальный поиск."; }
+        }
+    }
+    private void SemanticEditor_Changed(object? sender, EventArgs e)
+    {
+        if (!showingCandidate && editingCandidate != null
+            && (txtCandidateText.Text.Trim() != editingCandidate.Text || txtReviewNote.Text.Trim() != editingCandidate.ReviewNote))
+            txtValidation.Text = "STALE: есть несохранённая правка. Прежняя экспертиза не относится к тексту редактора; сначала сохраните/разрешите правку.";
+    }
+    private static string FormatSemanticShortlist(Candidate c, SemanticShortlist s, SemanticReviewEvidence? evidence = null, bool current = false)
+    {
+        var output = new System.Text.StringBuilder();
+        output.AppendLine("COVERAGE_LIMITED — лексический поиск не доказывает отсутствие смысловых повторов.");
+        output.AppendLine($"Кандидат {c.Id} • {c.Kind} / {c.Topic} / {c.Act}\r\n{c.Text}");
+        output.AppendLine($"Рассмотрено: {s.TotalConsidered}; в scope: {s.ScopeConsidered}; shortlist: {s.Matches.Count} / {s.MaxMatches}; НЕ передано модели: {s.TotalConsidered - s.Matches.Count}.");
+        output.AppendLine(evidence == null ? "Проверка смысла: НЕ ПРОВОДИЛАСЬ для этого списка. Отправка только отдельной кнопкой."
+            : current ? $"MODEL_ADVISORY_NOT_VERIFIED — совет модели {evidence.ModelId}; {evidence.CreatedAtUtc:u}. Не допуск к XML."
+            : "STALE: прежний совет модели не считается действующим. Требуется новая явная экспертиза.");
+        foreach (var m in s.Matches)
+        {
+            output.AppendLine($"\r\n{m.RefKey}\r\n{m.Kind} / {m.Topic} / {m.Act} / {m.Band} / {m.Register}; лексическая оценка: {m.Score:F3}");
+            output.AppendLine(m.IsPeer ? "Активный кандидат workspace" : $"{m.SourceFile}:{m.SourceLine}");
+            // Pathological source strings stay bounded on screen, with explicit truncation.
+            output.AppendLine(m.Text.Length <= 4000 ? m.Text : m.Text[..4000] + "… [показаны первые 4000 символов]");
+            if (current && evidence != null)
+            {
+                var verdict = evidence.Verdicts.Single(v => v.RefKey == m.RefKey);
+                output.AppendLine($"Совет: {verdict.Relation} — {verdict.Reason}");
+                if (verdict.Relation == "SAME_MEANING") output.AppendLine("ВНИМАНИЕ: модель предполагает смысловой повтор. Решение принимает редактор вручную.");
+            }
+        }
+        if (s.Matches.Count == 0) output.AppendLine("Лексически близких примеров не найдено. Синонимы могут быть пропущены; нулевая вероятность дубля не доказана.");
+        return output.ToString();
+    }
+    private async void FindSimilar_Click(object? sender, EventArgs e)
+    {
+        if (busy || !ResolvePendingEdit()) return;
+        await RunAsync("Ищу лексически похожие записи локально…", async token =>
+        {
+            var c = RequireCandidate().Copy(); var pack = Snapshot;
+            var peers = session.Candidates.Select(p => p.Copy()).ToList();
+            var fresh = await Task.Run(() => reader.Load(pack.ModuleRoot, token), token);
+            var shortlist = await Task.Run(() => SemanticDuplicateScout.Search(fresh, c, peers, cancellationToken: token), token);
+            token.ThrowIfCancellationRequested();
+            var current = c.SemanticReview != null && SemanticDuplicateScout.IsEvidenceCurrent(c, fresh, peers, c.SemanticReview, token);
+            txtValidation.Text = FormatSemanticShortlist(c, shortlist, c.SemanticReview, current);
+            statusLabel.Text = "COVERAGE_LIMITED: локальный поиск завершён; сетевых запросов нет.";
+        });
+    }
+    private async void SemanticReview_Click(object? sender, EventArgs e)
+    {
+        if (busy || !ResolvePendingEdit()) return;
+        await RunAsync("Один запрос Gemma: только рекомендация по ограниченному списку…", async token =>
+        {
+            var c = RequireCandidate().Copy(); var pack = Snapshot; var configured = ReadSettings();
+            if (!PathSafety.Canonical(configured.HighFiveRoot).Equals(pack.ModuleRoot, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Источник в настройках изменён. Сначала импортируйте его; автоматической перепривязки нет.");
+            var peers = session.Candidates.Select(p => p.Copy()).ToList();
+            var shortlist = await Task.Run(() => SemanticDuplicateScout.Search(pack, c, peers, cancellationToken: token), token);
+            txtValidation.Text = FormatSemanticShortlist(c, shortlist);
+            if (shortlist.Matches.Count == 0) { statusLabel.Text = "COVERAGE_LIMITED: список пуст; модель не вызывалась, смысловые повторы не исключены."; return; }
+            SemanticReviewEvidence evidence;
+            try { evidence = await Model.ReviewSemanticAsync(configured, txtApiKey.Text, c, shortlist, token); }
+            catch (LmStudioException ex)
+            {
+                txtValidation.AppendText("\r\nBLOCKED_LM: новая экспертиза не сохранена. " + ex.Diagnostic);
+                statusLabel.Text = "BLOCKED_LM: " + ex.Diagnostic; txtSettingsResult.Text = ex.Diagnostic.ToString();
+                MessageBox.Show(this, ex.Diagnostic.ToString(), "LM Studio — диагностика", MessageBoxButtons.OK, MessageBoxIcon.Warning); return;
+            }
+            // One source reread and full hash check immediately before synchronous atomic save.
+            var fresh = await Task.Run(() => reader.Load(pack.ModuleRoot, token), token);
+            token.ThrowIfCancellationRequested();
+            var updated = SemanticDuplicateScout.WithCurrentEvidence(RequireCandidate(), fresh, session.Candidates, evidence, token);
+            token.ThrowIfCancellationRequested(); SaveCandidateVersion(updated); BindCandidates(updated.Id);
+            statusLabel.Text = "MODEL_ADVISORY_NOT_VERIFIED / COVERAGE_LIMITED. Совет сохранён; актуальность показана в отчёте, решение остаётся ручным.";
+        });
     }
     private bool ResolvePendingEdit()
     {

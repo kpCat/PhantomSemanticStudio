@@ -44,6 +44,8 @@ public sealed class WorkspaceStore : IDisposable
             || c.ModelId == null || c.Instruction == null || c.Rationale == null || c.Status == null || c.ReviewNote == null || c.ApprovedFingerprint == null)
             || state.Candidates.Select(c => c.Id).Distinct(StringComparer.Ordinal).Count() != state.Candidates.Count)
             throw new InvalidDataException("Повреждённые данные кандидатов.");
+        foreach (var candidate in state.Candidates)
+            if (candidate.SemanticReview != null) SemanticDuplicateScout.ValidateEvidence(candidate.SemanticReview);
         if (state.Lessons.Any(l => l == null || l.Length > 4000) || state.ScopedLessons.Any(l => l == null
             || string.IsNullOrWhiteSpace(l.Text) || l.Text.Length > 4000 || l.Id == null || l.Topic == null || l.Act == null
             || l.Band == null || l.Register == null || l.Gender == null || l.SourceFingerprint == null))

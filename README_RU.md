@@ -1,6 +1,6 @@
 # Phantom Semantic Studio · 0.1
 
-Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-004: [reports/PSS-004-final.md](reports/PSS-004-final.md), [UI evidence](reports/PSS-004-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
+Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-005: [reports/PSS-005-final.md](reports/PSS-005-final.md), [UI evidence](reports/PSS-005-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
 
 В исходной поставке сборка C#, Visual Studio Designer, LM Studio и Java runtime не запускались. Этот исторический статус сохранён в BASELINE_VERIFICATION.md. PSS-001 выполняет реальные Windows-проверки; LM, Designer, runtime UI/DPI и Java имеют отдельные статусы в итоговом отчёте. Статические проверки структуры не заменяют компиляцию.
 
@@ -40,6 +40,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-PSS003-Java.p
 **PASS_JAVA_STAGED / JAVA_CONTENT_VALIDATED_NOT_SERVER_READY** означает только успешную загрузку именно этой физической копии. При недоступном окружении **BLOCKED_JAVA**, при отказе loader **FAILED_JAVA**. Изменившиеся source/stage требуют нового staging и проверки. Ни один статус не разрешает установку или публикацию на сервер.
 
 ## Диалоговое обучение
+
+На вкладке «Кандидаты» доступны два отдельных действия. «Найти похожие (локально)» читает источник и сравнивает выбранную сохранённую запись со всем корпусом того же вида и активными кандидатами. Показывает до 12 references с полным текстом, ID, provenance и лексической оценкой, число просмотренных и не переданных модели записей. Exact-повторы из других act сохраняются. Поиск работает без LM Studio; `COVERAGE_LIMITED` всегда означает неполное смысловое покрытие, включая пустой результат и пропущенные синонимы.
+
+«Оценить смысл (Gemma)» делает один явный JSON Schema POST выбранной локальной модели по этому ограниченному списку. Только `SAME_MEANING / RELATED / DIFFERENT / UNSURE` и короткие причины. `MODEL_ADVISORY_NOT_VERIFIED` — мнение модели, решение остаётся ручным. При ошибке/отмене новый отчёт не сохраняется, локальный список доступен; повторов и подмены модели нет. Несохранённую правку сначала нужно сохранить/отбросить/отменить штатным диалогом.
+
+Evidence содержит ID/hashes/provenance/verdict/reason/model/UTC, максимум 12 решений, 240 символов причины и 32 KiB на объект. Оно сохраняется только в `session.json` собственного workspace после повторного чтения источника и проверки candidate/source/peers/shortlist SHA. Старые session Version=1 совместимы; advisory не входит в approval fingerprint. Правка сбрасывает evidence; изменившийся источник, scope, active peers или references дают `STALE`. Выбор сохранённого отчёта перечитывает источник; ошибка чтения также даёт STALE. Семантическое мнение не меняет approvals, generation mode, exact staging или Java-gates; `SEMANTIC_NOT_CHECKED` сохраняется. Live PSS-005: один POST завершился BAD_RESPONSE, без новой evidence; модель выгружена.
 «Диалог и обучение» выбирает ответ из импортированного каталога приблизительным C#-инспектором, без вызова Gemma. Показаны pattern/template ID. Это не полная эмуляция сервера: functional-first, identity, социальные gates, gameplay, mood, постоянная память и точный Java selector здесь не воспроизведены.
 Объяснение ошибки сохраняется с topic/act/полом/отношениями/стилем и source fingerprint. Во вкладке «Диалог и обучение» можно выбрать и просмотреть сохранённое замечание, затем явно применить только его в конструктор. При смене baseline нужно новое ручное ревью. Старые строковые замечания сохранены; для них scope и baseline неизвестны и требуют проверки. Генерация и каждое одобрение остаются ручными.
 
@@ -52,7 +58,7 @@ JSON экспорт только в workspace/exports; XML staging только 
 
 ## Что пока не готово
 - Полный визуальный smoke 100%/150% DPI и реальный LM Studio: точные результаты и незакрытые gates приведены в отчётах PSS-002 final/ui. Local build/console/static PASS не заменяет живую Gemma или UI acceptance.
-- Полноценный смысловой поиск повторов, грамматический анализ и истинность игровых фактов. Реализованы точные повторы и лексические кандидаты на сходство, не магическая гарантия отсутствия синонимов.
+- Полный смысловой охват корпуса, грамматический анализ и истинность игровых фактов. PSS-005 добавляет ручную advisory экспертизу до 12 references; лексический shortlist может пропустить синонимы, а мнение Gemma не доказывает отсутствие повторов.
 - Полноценная Java/runtime-parity: отдельный content gate не подтверждает поведение игры или условия выбора реплики. Реальные результаты PSS-003 перечислены отдельно в final report.
 - Runtime gender/persona-фильтры. JSON сохраняет редакционные ограничения; XML staging блокирует Gender != ANY и любой placeholder.
 - Новые act/topic, fact/recall, игровые действия, мат/mature-авторинг, автоматический монтаж manifest, публикация/rollback рабочего сервера. Не добавлять их тихо в первую задачу.
@@ -66,4 +72,4 @@ JSON экспорт только в workspace/exports; XML staging только 
 `reports/BASELINE_VERIFICATION.md` — честный статус исходной поставки.
 `BASELINE_MANIFEST.json` — SHA-256 каждого файла исходной поставки.
 
-После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-004; PSS-005 не начат.
+После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-005; PSS-006 не начат.

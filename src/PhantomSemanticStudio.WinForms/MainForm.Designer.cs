@@ -89,6 +89,8 @@ partial class MainForm
             btnValidate = new System.Windows.Forms.Button();
             btnApprove = new System.Windows.Forms.Button();
             btnReject = new System.Windows.Forms.Button();
+            btnFindSimilar = new System.Windows.Forms.Button();
+            btnSemanticReview = new System.Windows.Forms.Button();
             txtExportInfo = new System.Windows.Forms.TextBox();
             btnCheckSource = new System.Windows.Forms.Button();
             btnExport = new System.Windows.Forms.Button();
@@ -186,6 +188,7 @@ partial class MainForm
             tabLibrary.Padding = new System.Windows.Forms.Padding(12);
             // tabCandidates
             tabCandidates.Name = "tabCandidates";
+            tabCandidates.Size = new System.Drawing.Size(1252, 712);
             tabCandidates.Text = "Кандидаты";
             tabCandidates.UseVisualStyleBackColor = true;
             tabCandidates.Padding = new System.Windows.Forms.Padding(12);
@@ -599,7 +602,7 @@ partial class MainForm
             txtValidation.Multiline = true;
             txtValidation.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             txtValidation.ReadOnly = true;
-            txtValidation.MaxLength = 30000;
+            txtValidation.MaxLength = 0;
             // btnSaveCandidate
             btnSaveCandidate.Name = "btnSaveCandidate";
             btnSaveCandidate.Location = new System.Drawing.Point(16, 592);
@@ -628,6 +631,22 @@ partial class MainForm
             btnReject.Text = "Отклонить";
             btnReject.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnReject.UseVisualStyleBackColor = true;
+            // btnFindSimilar
+            btnFindSimilar.Name = "btnFindSimilar";
+            btnFindSimilar.Location = new System.Drawing.Point(618, 640);
+            btnFindSimilar.Size = new System.Drawing.Size(278, 38);
+            btnFindSimilar.Text = "Найти похожие (локально)";
+            btnFindSimilar.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnFindSimilar.TabIndex = 11;
+            btnFindSimilar.UseVisualStyleBackColor = true;
+            // btnSemanticReview
+            btnSemanticReview.Name = "btnSemanticReview";
+            btnSemanticReview.Location = new System.Drawing.Point(908, 640);
+            btnSemanticReview.Size = new System.Drawing.Size(318, 38);
+            btnSemanticReview.Text = "Оценить смысл (Gemma)";
+            btnSemanticReview.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            btnSemanticReview.TabIndex = 12;
+            btnSemanticReview.UseVisualStyleBackColor = true;
             // txtExportInfo
             txtExportInfo.Name = "txtExportInfo";
             txtExportInfo.Location = new System.Drawing.Point(16, 18);
@@ -911,6 +930,8 @@ partial class MainForm
             tabCandidates.Controls.Add(btnValidate);
             tabCandidates.Controls.Add(btnApprove);
             tabCandidates.Controls.Add(btnReject);
+            tabCandidates.Controls.Add(btnFindSimilar);
+            tabCandidates.Controls.Add(btnSemanticReview);
             tabExport.Controls.Add(txtExportInfo);
             tabExport.Controls.Add(btnCheckSource);
             tabExport.Controls.Add(btnExport);
@@ -955,6 +976,10 @@ partial class MainForm
             btnValidate.Click += Validate_Click;
             btnApprove.Click += Approve_Click;
             btnReject.Click += Reject_Click;
+            btnFindSimilar.Click += FindSimilar_Click;
+            btnSemanticReview.Click += SemanticReview_Click;
+            txtCandidateText.TextChanged += SemanticEditor_Changed;
+            txtReviewNote.TextChanged += SemanticEditor_Changed;
             btnCheckSource.Click += CheckSource_Click;
             btnExport.Click += Export_Click;
             btnStageXml.Click += StageXml_Click;
@@ -1087,6 +1112,8 @@ partial class MainForm
     private System.Windows.Forms.Button btnValidate = null!;
     private System.Windows.Forms.Button btnApprove = null!;
     private System.Windows.Forms.Button btnReject = null!;
+    private System.Windows.Forms.Button btnFindSimilar = null!;
+    private System.Windows.Forms.Button btnSemanticReview = null!;
     private System.Windows.Forms.TextBox txtExportInfo = null!;
     private System.Windows.Forms.Button btnCheckSource = null!;
     private System.Windows.Forms.Button btnExport = null!;
