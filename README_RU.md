@@ -1,6 +1,6 @@
 # Phantom Semantic Studio · 0.1
 
-Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-005: [reports/PSS-005-final.md](reports/PSS-005-final.md), [UI evidence](reports/PSS-005-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
+Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-006: [reports/PSS-006-final.md](reports/PSS-006-final.md), [UI evidence](reports/PSS-006-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
 
 В исходной поставке сборка C#, Visual Studio Designer, LM Studio и Java runtime не запускались. Этот исторический статус сохранён в BASELINE_VERIFICATION.md. PSS-001 выполняет реальные Windows-проверки; LM, Designer, runtime UI/DPI и Java имеют отдельные статусы в итоговом отчёте. Статические проверки структуры не заменяют компиляцию.
 
@@ -13,6 +13,7 @@
 Откройте `src\PhantomSemanticStudio.WinForms\MainForm.cs` → «Открыть конструктор».
 Контролы находятся в `MainForm.Designer.cs`; конструктор формы не обращается к файлам/API. Все вкладки и controls объявлены статически, без циклов в InitializeComponent.
 Модальная форма выбора партии: `StageSelectionForm.cs` → «Открыть конструктор»; `.Designer.cs` и `.resx` вложены в проекте. Её конструктор тоже содержит только `InitializeComponent()`.
+Окно корпуса: `ChatCorpusForm.cs` → «Открыть конструктор», со статическими `.Designer.cs`/`.resx` и безопасным конструктором. Static verification не заменяет настоящий VS round-trip.
 
 Из PowerShell:
 ```
@@ -51,6 +52,18 @@ Evidence содержит ID/hashes/provenance/verdict/reason/model/UTC, мак�
 
 При смене кандидата, вкладки или закрытии несохранённый текст и отметка ревью защищены диалогом «Сохранить / Отбросить / Отмена». Правка отменяет approval; неудачное сохранение сохраняет прежнюю корректную state и текст в редакторе.
 
+## Корпус публичных чатов
+
+На вкладке «Настройки» откройте «Корпус чатов», выберите локальный `chat.zip` и нажмите «Импортировать». Это отдельное окно; импорт пака и загрузка модели для корпуса не нужны. ZIP только читается, без распаковки. Приватные TELL/FRIENDTELL и их варианты исключаются до записи; ники из заголовков не сохраняются. Публичные оригиналы остаются только в приватном `workspace/corpora`, отдельно от session.json. SQLite DB и receipt имеют неизменяемую версию/отпечатки; повреждённый индекс блокирует чтение. Cancel отменяет чтение и SQL, завершённый прежний корпус сохраняется.
+
+Поддерживается плоский classic ZIP с .log и chat.log.date: до 500 entries, 64 MiB на entry, 256 MiB исходных и распакованных bytes, 3 млн строк, 16 KiB на строку, 4000 символов сообщения, сжатие до 100:1. Central directory до 512 KiB проверяется до создания entries. Шифрование, ZIP64, split archives, ссылки, вложенные пути и неправильный UTF-8 отклоняются. Большие логи нужно разделить заранее в отдельную копию; программа не меняет архив.
+
+Поиск и фильтры по каналу, языковой оценке, дате, длине, дубликатам и шуму дают страницы по 100 записей. «LATIN_TRANSLIT_CANDIDATE» означает возможный транслит, «EN_OR_OTHER» — латиницу без доказательства английского. Перевода нет. Вручную отметьте от 1 до 20 публичных фрагментов; скрытые фильтром отметки видны справа. Другой корпус очищает выбор. Preview приблизительно скрывает email/URL/IP/телефоны; свободный текст может содержать личную информацию, совершенная анонимность не доказана. Статус всегда SOURCE_MATERIAL_ONLY. Обучение, LM-запросы, создание кандидатов, approvals и XML из этого окна не запускаются.
+
+Одна direct NuGet dependency Microsoft.Data.Sqlite закреплена на 10.0.12, native SQLitePCLRaw — lock files. Core session по-прежнему JSON. DB cache 8 MiB, SQL temp в памяти, paging <=200; corpus.db ограничен 1 GiB. Не публикуйте workspace, ZIP и индексы. Synthetic smoke использует только вымышленные данные.
+
+Сохранённый семантический совет теперь проверяется в фоне с отдельной отменой. Пока проверка не закончилась, показывается STALE; смена кандидата/правка/отмена не позволяют старой операции перерисовать новый выбор. BAD_RESPONSE показывает безопасный этап отказа (envelope/content/schema/finish/refusal/tools), без сырого ответа или повторного запроса.
+
 ## Защита исходников
 `PackReader` только читает. `WorkspaceStore` пишет лишь в `%LOCALAPPDATA%\PhantomSemanticStudio\workspace`, проверяя непересечение с source/repository. Junction/symlink-пути отклоняются. Второй экземпляр блокируется workspace.lock. JSON сохраняется через временный файл и замену. Это программные guards, не отдельная OS sandbox против злонамеренного процесса, меняющего пути во время записи.
 JSON экспорт только в workspace/exports; XML staging только в workspace/proposals. Исполняемые Core/GUI не содержат Process.Start, shell, Ant, Java, Git, сервера или доступа к игровой БД. Java operator script отделён от GUI и проверяет только shadow. Нет метода установки/публикации. Отпечаток источника повторно проверяется; изменение текста аннулирует approval, изменённое одобрение не пропускается молча.
@@ -62,7 +75,7 @@ JSON экспорт только в workspace/exports; XML staging только 
 - Полноценная Java/runtime-parity: отдельный content gate не подтверждает поведение игры или условия выбора реплики. Реальные результаты PSS-003 перечислены отдельно в final report.
 - Runtime gender/persona-фильтры. JSON сохраняет редакционные ограничения; XML staging блокирует Gender != ANY и любой placeholder.
 - Новые act/topic, fact/recall, игровые действия, мат/mature-авторинг, автоматический монтаж manifest, публикация/rollback рабочего сервера. Не добавлять их тихо в первую задачу.
-- Развитая база знаний/SQLite: starter использует JSON без внешних NuGet. Это заменяемое хранилище, а не игровая DB.
+- Анализ корпуса моделью и обучение: PSS-006 содержит только локальный corpus SQLite, ручной просмотр и языковой triage. PSS-007 не начат.
 
 ## Структура
 `src/PhantomSemanticStudio.Core` — reader, безопасные пути, workspace, проверка кандидатов, клиент LM Studio, inspector, review export.
@@ -72,4 +85,4 @@ JSON экспорт только в workspace/exports; XML staging только 
 `reports/BASELINE_VERIFICATION.md` — честный статус исходной поставки.
 `BASELINE_MANIFEST.json` — SHA-256 каждого файла исходной поставки.
 
-После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-005; PSS-006 не начат.
+После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-006; PSS-007 не начат.

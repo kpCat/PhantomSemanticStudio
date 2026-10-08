@@ -117,6 +117,7 @@ partial class MainForm
             btnSaveSettings = new System.Windows.Forms.Button();
             btnCheckLm = new System.Windows.Forms.Button();
             btnImport = new System.Windows.Forms.Button();
+            btnChatCorpus = new System.Windows.Forms.Button();
             txtSettingsResult = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)nudCount).BeginInit();
             ((System.ComponentModel.ISupportInitialize)gridLibrary).BeginInit();
@@ -824,6 +825,12 @@ partial class MainForm
             btnImport.Size = new System.Drawing.Size(332, 36);
             btnImport.Text = "Импортировать пак (только чтение)";
             btnImport.UseVisualStyleBackColor = true;
+            btnChatCorpus.Name = "btnChatCorpus";
+            btnChatCorpus.Location = new System.Drawing.Point(876, 500);
+            btnChatCorpus.Size = new System.Drawing.Size(204, 36);
+            btnChatCorpus.Text = "Корпус чатов…";
+            btnChatCorpus.UseVisualStyleBackColor = true;
+            btnChatCorpus.Click += ChatCorpus_Click;
             // txtSettingsResult
             txtSettingsResult.Name = "txtSettingsResult";
             txtSettingsResult.Location = new System.Drawing.Point(16, 558);
@@ -958,6 +965,7 @@ partial class MainForm
             tabSettings.Controls.Add(btnSaveSettings);
             tabSettings.Controls.Add(btnCheckLm);
             tabSettings.Controls.Add(btnImport);
+            tabSettings.Controls.Add(btnChatCorpus);
             tabSettings.Controls.Add(txtSettingsResult);
             btnCancel.Click += Cancel_Click;
             cmbAct.SelectedIndexChanged += Act_Changed;
@@ -1140,5 +1148,6 @@ partial class MainForm
     private System.Windows.Forms.Button btnSaveSettings = null!;
     private System.Windows.Forms.Button btnCheckLm = null!;
     private System.Windows.Forms.Button btnImport = null!;
+    private System.Windows.Forms.Button btnChatCorpus = null!;
     private System.Windows.Forms.TextBox txtSettingsResult = null!;
 }

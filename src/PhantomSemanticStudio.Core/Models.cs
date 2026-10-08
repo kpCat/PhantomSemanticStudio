@@ -98,9 +98,9 @@ public sealed record SemanticReviewEvidence
 }
 public sealed record GenerationRequest(string Topic, string Act, string Band, string Register, string Gender, string Instruction, string Words, int Count, GenerationMode Mode = GenerationMode.MIXED);
 public enum LmDiagnosticCode { CHECKED_MODEL_LIST, MODEL_NOT_LISTED, SERVER_OFFLINE, CONNECTION_ERROR, TIMEOUT, CANCELLED, ENDPOINT, AUTH, HTTP_ERROR, SCHEMA_REJECTED, BAD_RESPONSE, INVALID_SETTINGS, INVALID_REQUEST }
-public sealed record LmDiagnostic(LmDiagnosticCode Code, string Message)
+public sealed record LmDiagnostic(LmDiagnosticCode Code, string Message, string FailureCategory = "")
 {
-    public override string ToString() => Code + ": " + Message;
+    public override string ToString() => Code + ": " + (FailureCategory.Length == 0 ? "" : "[" + FailureCategory + "] ") + Message;
 }
 // Не сохраняет исходное исключение: оно может содержать token, prompt или ответ сервера.
 public sealed class LmStudioException(LmDiagnostic diagnostic) : Exception(diagnostic.ToString())

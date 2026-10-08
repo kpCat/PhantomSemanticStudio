@@ -22,6 +22,8 @@ public partial class MainForm : Form
     private bool restoringSelection;
     private bool selectionPending;
     private bool showingCandidate;
+    private CancellationTokenSource? evidenceRefresh;
+    private long evidenceSelectionVersion;
     private sealed record LessonChoice(EditorialLesson Lesson, string Label);
 
     // Важно для Visual Studio Designer: здесь нет IO, сервисов, DI или построения controls.
@@ -90,6 +92,7 @@ public partial class MainForm : Form
     };
     private void ResetSnapshot()
     {
+        CancelEvidenceRefresh();
         snapshot = null; cmbAct.Items.Clear(); cmbTopic.Items.Clear(); gridLibrary.DataSource = null;
         lblSnapshot.Text = "Источник изменён. Нужен новый импорт; старые кандидаты автоматически не перепривязываются.";
         preview.Reset(); lastPreview = null;
@@ -235,6 +238,7 @@ public partial class MainForm : Form
     }
     private void ShowCandidate(Candidate? candidate)
     {
+        CancelEvidenceRefresh();
         showingCandidate = true;
         editingCandidate = candidate;
         txtCandidateText.Text = candidate?.Text ?? ""; txtReviewNote.Text = candidate?.ReviewNote ?? "";
@@ -244,16 +248,45 @@ public partial class MainForm : Form
         if (candidate?.SemanticReview != null)
         {
             if (snapshot == null) { txtValidation.Text = "STALE: источник ещё не импортирован. Сохранённый совет не считается действующим."; return; }
-            try
+            txtValidation.Text = "STALE: актуальность сохранённого совета проверяется в фоне…";
+            var cancel = new CancellationTokenSource(); evidenceRefresh = cancel; btnCancel.Enabled = true;
+            _ = RefreshSavedEvidenceAsync(candidate.Copy(), snapshot, session.Candidates.Select(p => p.Copy()).ToList(), evidenceSelectionVersion, cancel);
+        }
+    }
+    private void CancelEvidenceRefresh()
+    {
+        evidenceSelectionVersion++; evidenceRefresh?.Cancel(); evidenceRefresh = null;
+        if (!IsDisposed) btnCancel.Enabled = busy;
+    }
+    private async Task RefreshSavedEvidenceAsync(Candidate candidate, PackSnapshot baseline, IReadOnlyList<Candidate> peers,
+        long version, CancellationTokenSource cancel)
+    {
+        bool MayPaint() => !IsDisposed && !Disposing && !cancel.IsCancellationRequested && version == evidenceSelectionVersion
+            && ReferenceEquals(snapshot, baseline) && editingCandidate?.Id == candidate.Id && SelectedCandidate?.Id == candidate.Id
+            && txtCandidateText.Text.Trim() == candidate.Text && txtReviewNote.Text.Trim() == candidate.ReviewNote
+            && SemanticDuplicateScout.CandidateFingerprint(editingCandidate) == SemanticDuplicateScout.CandidateFingerprint(candidate)
+            && editingCandidate.ApprovedFingerprint == candidate.ApprovedFingerprint && editingCandidate.Status == candidate.Status
+            && SemanticDuplicateScout.PeersFingerprint(candidate, session.Candidates) == SemanticDuplicateScout.PeersFingerprint(candidate, peers);
+        try
+        {
+            var shortlist = await Task.Run(() =>
             {
-                // Explicit candidate selection: read-only freshness check, no timers/model calls.
-                var fresh = reader.Load(snapshot.ModuleRoot);
-                var shortlist = SemanticDuplicateScout.Search(fresh, candidate, session.Candidates, candidate.SemanticReview.MaxMatches);
-                var current = SemanticDuplicateScout.IsEvidenceCurrent(candidate, fresh, session.Candidates, candidate.SemanticReview);
-                txtValidation.Text = FormatSemanticShortlist(candidate, shortlist, candidate.SemanticReview, current);
-            }
-            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.Xml.XmlException or System.Text.DecoderFallbackException)
-            { txtValidation.Text = "STALE: актуальность источника/списка не подтверждена. Сохранённый совет не считается действующим. Выполните новый импорт и локальный поиск."; }
+                var fresh = reader.Load(baseline.ModuleRoot, cancel.Token);
+                return SemanticDuplicateScout.Search(fresh, candidate, peers, candidate.SemanticReview!.MaxMatches, cancel.Token);
+            }, cancel.Token);
+            if (MayPaint()) txtValidation.Text = FormatSemanticShortlist(candidate, shortlist, candidate.SemanticReview,
+                SemanticDuplicateScout.IsEvidenceCurrent(shortlist, candidate.SemanticReview!));
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or IOException or InvalidDataException or UnauthorizedAccessException
+            or System.Xml.XmlException or System.Text.DecoderFallbackException)
+        {
+            if (!IsDisposed && !Disposing && version == evidenceSelectionVersion && editingCandidate?.Id == candidate.Id)
+                txtValidation.Text = "STALE: актуальность не подтверждена или проверка отменена. Сохранённый совет не считается действующим.";
+        }
+        finally
+        {
+            if (ReferenceEquals(evidenceRefresh, cancel)) { evidenceRefresh = null; if (!IsDisposed && !Disposing) btnCancel.Enabled = busy; }
+            cancel.Dispose();
         }
     }
     private void SemanticEditor_Changed(object? sender, EventArgs e)
@@ -297,7 +330,7 @@ public partial class MainForm : Form
             var fresh = await Task.Run(() => reader.Load(pack.ModuleRoot, token), token);
             var shortlist = await Task.Run(() => SemanticDuplicateScout.Search(fresh, c, peers, cancellationToken: token), token);
             token.ThrowIfCancellationRequested();
-            var current = c.SemanticReview != null && SemanticDuplicateScout.IsEvidenceCurrent(c, fresh, peers, c.SemanticReview, token);
+            var current = c.SemanticReview != null && SemanticDuplicateScout.IsEvidenceCurrent(shortlist, c.SemanticReview);
             txtValidation.Text = FormatSemanticShortlist(c, shortlist, c.SemanticReview, current);
             statusLabel.Text = "COVERAGE_LIMITED: локальный поиск завершён; сетевых запросов нет.";
         });
@@ -533,10 +566,16 @@ public partial class MainForm : Form
             statusLabel.Text = "STAGED_UNVALIDATED. XML-предложение только в workspace, НЕ ДЛЯ УСТАНОВКИ.";
         });
     }
-    private void Cancel_Click(object? sender, EventArgs e) => operation?.Cancel();
+    private void Cancel_Click(object? sender, EventArgs e) { operation?.Cancel(); evidenceRefresh?.Cancel(); }
+    private void ChatCorpus_Click(object? sender, EventArgs e)
+    {
+        if (!ready || busy) return;
+        using var form = new ChatCorpusForm(); form.SetWorkspace(Store); form.ShowDialog(this);
+    }
     private async Task RunAsync(string caption, Func<CancellationToken, Task> action)
     {
         if (busy) return;
+        CancelEvidenceRefresh();
         busy = true; operation = new CancellationTokenSource(); tabs.Enabled = false; btnCancel.Enabled = true; UseWaitCursor = true; statusLabel.Text = caption;
         try { await action(operation.Token); }
         catch (LmStudioException ex)
@@ -553,16 +592,17 @@ public partial class MainForm : Form
         }
         finally
         {
-            operation.Dispose(); operation = null; busy = false; tabs.Enabled = true; btnCancel.Enabled = false; UseWaitCursor = false;
+            operation.Dispose(); operation = null; busy = false; tabs.Enabled = true; btnCancel.Enabled = evidenceRefresh != null; UseWaitCursor = false;
         }
     }
     private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
         if (busy) { operation?.Cancel(); e.Cancel = true; statusLabel.Text = "Отмена запрошена. Закройте окно повторно после завершения операции."; return; }
         e.Cancel = !ResolvePendingEdit();
+        if (!e.Cancel) CancelEvidenceRefresh();
     }
     private void MainForm_FormClosed(object? sender, FormClosedEventArgs e)
     {
-        operation?.Dispose(); http?.Dispose(); store?.Dispose();
+        CancelEvidenceRefresh(); operation?.Dispose(); http?.Dispose(); store?.Dispose();
     }
 }

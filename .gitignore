@@ -7,3 +7,8 @@ artifacts/
 workspace/
 reports/local/
 *.zip
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.log

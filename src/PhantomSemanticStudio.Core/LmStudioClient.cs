@@ -66,7 +66,7 @@ public sealed class LmStudioClient(HttpClient http)
             if (Encoding.UTF8.GetByteCount(payload) > 64 * 1024)
                 throw new LmStudioException(new(LmDiagnosticCode.INVALID_REQUEST, "Контекст экспертизы превышает 64 KiB. Уменьшите список вручную; автоматического повтора нет."));
             var raw = await SendAsync(settings, "chat/completions", HttpMethod.Post, payload, apiKey, token).ConfigureAwait(false);
-            var verdicts = ParseSemanticVerdicts(CompletionText(raw), shortlist);
+            var verdicts = ParseContent(CompletionText(raw), text => ParseSemanticVerdicts(text, shortlist));
             token.ThrowIfCancellationRequested();
             return new()
             {
@@ -209,25 +209,39 @@ public sealed class LmStudioClient(HttpClient http)
             response_format = new { type = "json_schema", json_schema = new { name = "semantic_candidates", strict = true, schema } }
         });
         var raw = await SendAsync(settings, "chat/completions", HttpMethod.Post, payload, apiKey, token).ConfigureAwait(false);
-        var drafts = ParseDrafts(CompletionText(raw), request.Count, request.Mode);
+        var drafts = ParseContent(CompletionText(raw), text => ParseDrafts(text, request.Count, request.Mode));
         token.ThrowIfCancellationRequested();
         return drafts;
     }
     private static string CompletionText(string raw)
     {
-        using var result = JsonDocument.Parse(raw, new JsonDocumentOptions { MaxDepth = 32 });
-        UniqueFields(result.RootElement);
-        if (!result.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() != 1)
-            throw new InvalidDataException("Ожидался один ответ LM Studio.");
-        var choice = choices[0];
-        if (choice.ValueKind != JsonValueKind.Object || !choice.TryGetProperty("finish_reason", out var finish) || finish.ValueKind != JsonValueKind.String || finish.GetString() != "stop")
-            throw new InvalidDataException("Ответ модели не завершён нормально (лимит токенов/отказ/tools). Ничего не принято; уменьшите партию или увеличьте лимит.");
-        if (!choice.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object || message.TryGetProperty("tool_calls", out _) || message.TryGetProperty("function_call", out _)
-            || message.TryGetProperty("refusal", out var refusal) && refusal.ValueKind != JsonValueKind.Null
-            || !message.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.String)
-            throw new InvalidDataException("Ожидался только текстовый JSON; вызовы инструментов не принимаются.");
-        return content.GetString()!;
+        try
+        {
+            using var result = JsonDocument.Parse(raw, new JsonDocumentOptions { MaxDepth = 32 });
+            UniqueFields(result.RootElement);
+            if (result.RootElement.ValueKind != JsonValueKind.Object || !result.RootElement.TryGetProperty("choices", out var choices)
+                || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() != 1) throw BadResponse("ENVELOPE_SHAPE");
+            var choice = choices[0];
+            if (choice.ValueKind != JsonValueKind.Object) throw BadResponse("ENVELOPE_SHAPE");
+            if (!choice.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object) throw BadResponse("ENVELOPE_SHAPE");
+            if (message.TryGetProperty("tool_calls", out _) || message.TryGetProperty("function_call", out _)) throw BadResponse("TOOLS");
+            if (message.TryGetProperty("refusal", out var refusal) && refusal.ValueKind != JsonValueKind.Null) throw BadResponse("REFUSAL");
+            if (!choice.TryGetProperty("finish_reason", out var finish) || finish.ValueKind != JsonValueKind.String || finish.GetString() != "stop") throw BadResponse("FINISH_REASON");
+            if (!message.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.String) throw BadResponse("ENVELOPE_SHAPE");
+            if (string.IsNullOrWhiteSpace(content.GetString())) throw BadResponse("EMPTY_CONTENT");
+            return content.GetString()!;
+        }
+        catch (JsonException) { throw BadResponse("ENVELOPE_JSON"); }
+        catch (InvalidDataException) { throw BadResponse("ENVELOPE_SHAPE"); }
     }
+    private static T ParseContent<T>(string content, Func<string, T> parse)
+    {
+        try { return parse(content); }
+        catch (JsonException) { throw BadResponse("CONTENT_JSON"); }
+        catch (InvalidDataException) { throw BadResponse("CONTENT_SCHEMA"); }
+    }
+    private static LmStudioException BadResponse(string category) => new(new(LmDiagnosticCode.BAD_RESPONSE,
+        "Ответ отклонён на указанном этапе. JSON-контракт не пройден; ничего не сохранено. Проверьте поддержку JSON Schema и лимит токенов вручную. Автоматического повтора нет.", category));
     public static List<DraftItem> ParseDrafts(string text, int maxItems, GenerationMode mode = GenerationMode.MIXED)
     {
         var kinds = AllowedKinds(mode);
@@ -324,14 +338,15 @@ public sealed class LmStudioClient(HttpClient http)
             };
             throw new LmStudioException(diagnostic);
         }
-        if (response.Content.Headers.ContentLength > MaxResponseBytes) throw new InvalidDataException("HTTP-ответ превысил 1 MiB.");
+        if (response.Content.Headers.ContentLength > MaxResponseBytes) throw BadResponse("HTTP_LIMIT");
         await using var source = await response.Content.ReadAsStreamAsync(timeout.Token).ConfigureAwait(false);
         using var bytes = new MemoryStream(); var buffer = new byte[8192]; int count;
         while ((count = await source.ReadAsync(buffer.AsMemory(), timeout.Token).ConfigureAwait(false)) > 0)
         {
-            if (bytes.Length + count > MaxResponseBytes) throw new InvalidDataException("HTTP-ответ превысил 1 MiB.");
+            if (bytes.Length + count > MaxResponseBytes) throw BadResponse("HTTP_LIMIT");
             bytes.Write(buffer, 0, count);
         }
-        return new UTF8Encoding(false, true).GetString(bytes.ToArray());
+        try { return new UTF8Encoding(false, true).GetString(bytes.ToArray()); }
+        catch (DecoderFallbackException) { throw BadResponse("HTTP_ENCODING"); }
     }
 }

@@ -17,10 +17,15 @@ public static class SemanticDuplicateScout
     public static bool IsEvidenceCurrent(Candidate candidate, PackSnapshot snapshot, IReadOnlyList<Candidate> peers,
         SemanticReviewEvidence evidence, CancellationToken token = default)
     {
+        try { ValidateEvidence(evidence); return IsEvidenceCurrent(Search(snapshot, candidate, peers, evidence.MaxMatches, token), evidence); }
+        catch (InvalidDataException) { return false; }
+    }
+
+    public static bool IsEvidenceCurrent(SemanticShortlist s, SemanticReviewEvidence evidence)
+    {
         try
         {
             ValidateEvidence(evidence);
-            var s = Search(snapshot, candidate, peers, evidence.MaxMatches, token);
             if (evidence.CandidateFingerprint != s.CandidateFingerprint || evidence.SourceFingerprint != s.SourceFingerprint
                 || evidence.SourceStateFingerprint != s.SourceStateFingerprint || evidence.PeersFingerprint != s.PeersFingerprint
                 || evidence.ShortlistFingerprint != s.ShortlistFingerprint || evidence.TotalConsidered != s.TotalConsidered
@@ -114,8 +119,7 @@ public static class SemanticDuplicateScout
             if (p.Id != candidate.Id && p.Status != "REJECTED" && p.Kind == candidate.Kind)
                 Consider("PEER|" + p.Id, p.Text, p.Kind, p.Act, p.Topic, p.Band, p.Register, "", 0, true);
         }
-        var peersHash = Hash(peers.Where(p => p.Id != candidate.Id && p.Status != "REJECTED")
-            .OrderBy(p => p.Id, StringComparer.Ordinal).Select(p => new { p.Id, p.Status, Hash = CandidateFingerprint(p) }).ToArray());
+        var peersHash = PeersFingerprint(candidate, peers);
         var sourceState = Hash(new
         {
             snapshot.Fingerprint,
@@ -136,6 +140,8 @@ public static class SemanticDuplicateScout
     }
     public static string CandidateFingerprint(Candidate c) => Hash(new
     { c.Id, c.Kind, c.Text, c.Act, c.Topic, c.Band, c.Register, c.Gender, c.SourceFingerprint });
+    public static string PeersFingerprint(Candidate c, IReadOnlyList<Candidate> peers) => Hash(peers.Where(p => p.Id != c.Id && p.Status != "REJECTED")
+        .OrderBy(p => p.Id, StringComparer.Ordinal).Select(p => new { p.Id, p.Status, Hash = CandidateFingerprint(p) }).ToArray());
     public static string ShortlistFingerprint(IReadOnlyList<SemanticNeighbor> matches, int limit, int total, int scope)
         => Hash(new { limit, total, scope, Matches = matches });
     private static string Hash<T>(T value) => TextRules.Hash(JsonSerializer.Serialize(value));

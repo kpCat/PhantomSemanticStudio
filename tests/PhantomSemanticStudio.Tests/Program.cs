@@ -13,6 +13,20 @@ internal static partial class Program
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--pss-006-controls") return Pss006Controls();
+        if (args.Length > 0 && args[0] == "--pss-006-actual") return Pss006Actual(args);
+        if (args.Length > 0 && args[0] == "--pss-006-reopen") return Pss006Reopen(args);
+        if (args.Length > 0 && args[0] == "--pss-006-interactive") return Pss006Interactive();
+        if (args.Length > 0 && args[0] == "--pss-006-b")
+        {
+            Pss006B(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--pss-006-a")
+        {
+            await Pss006A();
+            Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--pss-005-controls") return Pss005Controls();
         if (args.Length > 0 && args[0] == "--pss-005-live") return await Pss005Live();
         if (args.Length > 0 && args[0] == "--pss-005-source") return Pss005Source(args);
@@ -297,6 +311,8 @@ internal static partial class Program
         Pss005Offline();
         await Pss005Http();
         await Pss005Persistence();
+        await Pss006A();
+        Pss006B();
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;
