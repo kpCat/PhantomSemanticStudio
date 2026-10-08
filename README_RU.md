@@ -76,10 +76,26 @@ Evidence содержит ID/hashes/provenance/verdict/reason/model/UTC, мак�
 
 Offline: `--pss-007-a`, `--pss-007-b`, `--pss-007-c` у console runner. STA: `dotnet exec --runtimeconfig src/PhantomSemanticStudio.WinForms/bin/Release/net10.0-windows/PhantomSemanticStudio.runtimeconfig.json tests/PhantomSemanticStudio.Tests/bin/Release/net10.0/PhantomSemanticStudio.Tests.dll --pss-007-controls`. Дополнительный static/privacy/encoding/scope gate: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Verify-PSS007.ps1 -GitScope`. LM/UI/DPI/VS/Java статусы отдельно в отчёте, synthetic HTTP не подтверждает live Gemma.
 
+## Качество пака и offline v3 PSS-008
+
+После импорта на вкладке «Библиотека» откройте «Качество и покрытие». Отдельная Designer-форма показывает все объявленные topic/act, включая нулевые строки, pattern topic/act/source и clean template act/band/register/source. Topic у template отсутствует. Числа, остатки capacity, точные нормализованные дубли и ограниченный sample лексических соседей — advisory / NOT_SEMANTIC_VERIFIED / NOT_RUNTIME_PARITY. Анализ не меняет source, corpus, candidates или approval. Фильтры, сортировка, полный trace и отмена работают локально.
+
+На вкладке «Ревью / экспорт» откройте отдельное «Предложение v3». Вручную выберите точные 1–20 CURRENT APPROVED и существующую пару semantic/conversation одной категории из manifest. Проверьте все ID, полные тексты и пути, затем дайте два независимых подтверждения, изначально NO. Изменение выбора/категории сбрасывает подтверждения; снятие подтверждения отменяет worker. Scope требует существующие topic/act в выбранных сегментах, Gender ANY, clean NONE, без placeholder, memory/fact и игровых действий. Консервативные проверки не заменяют редактора. Одна несовместимая запись блокирует всю партию.
+
+Создаётся только физический `workspace/v3-proposals/id`: копия импортированных файлов и append-only изменения 1–2 существующих v3 XML, устойчивые `pss.v3.p/t.*` ID без override. Manifest, custom и остальные файлы сохраняют bytes/SHA. Receipt остаётся `STAGED_V3_UNVALIDATED / Java NOT_RUN / NOT_INSTALLED`.
+
+После Release-сборки оператор отдельно запускает `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-PSS008-V3-Java.ps1 -StageRoot <полный finished path>`. GUI этот script не запускает. Нужны уже установленные JDK25/Ant и точно аудированный исходный build-контракт. Script копирует bounded allowlist в собственный физический oracle, проверяет native loadV3(custom=true), counts/hash, каждый новый ID/text/act/topic, выбор template и отрицательные duplicate/schema случаи. Все Java/Ant/temp/output находятся в shadow; исходный L2J остаётся read-only. Отсутствие зависимости или drift — BLOCKED_JAVA, без загрузок и повторов.
+
+Proof и detached `java-attestation.json` привязаны к точным входам и журналам. Локальный случайный ключ каждого stage хранится только в private `workspace/java-attestations`, вне oracle и экспорта; HMAC блокирует подделку из публичных metadata/hash. Это подтверждение честного локального оператора, не защита от владельца ОС, читающего ключ и самостоятельно подделывающего MAC. Старый unsigned proof не принимается для handoff. Ключ, XML и реальные proof/logs нельзя публиковать.
+
+В форме вручную выберите `java-validation.json`, дождитесь полного preview файлов и SHA, отдельно подтвердите третий NO checkbox и создайте `workspace/release-candidates/id`. Здесь только `proposed`, побайтовые исходные `backup`, hash-manifest и текстовый checklist: `OFFLINE_HANDOFF_NOT_INSTALLED / JAVA_CONTENT_ONLY_NOT_RUNTIME_READY`. Для будущего ручного применения нужна отдельная задача и разрешение владельца. Изменённый, unsigned, failed или не соответствующий stage proof отвергается целиком.
+
+Focused routes: `--pss-008-a`, `--pss-008-b`, `--pss-008-c`; STA через тот же WindowsDesktop runtimeconfig: `--pss-008-controls`. Статические/encoding/source/scope guards: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Verify-PSS008.ps1 -GitScope`. Результаты и отдельные LM/UI/DPI/VS статусы — в reports/PSS-008-final.md и PSS-008-ui.md.
+
 ## Защита исходников
 `PackReader` только читает. `WorkspaceStore` пишет лишь в `%LOCALAPPDATA%\PhantomSemanticStudio\workspace`, проверяя непересечение с source/repository. Junction/symlink-пути отклоняются. Второй экземпляр блокируется workspace.lock. JSON сохраняется через временный файл и замену. Это программные guards, не отдельная OS sandbox против злонамеренного процесса, меняющего пути во время записи.
 JSON экспорт только в workspace/exports; XML staging только в workspace/proposals. Исполняемые Core/GUI не содержат Process.Start, shell, Ant, Java, Git, сервера или доступа к игровой БД. Java operator script отделён от GUI и проверяет только shadow. Нет метода установки/публикации. Отпечаток источника повторно проверяется; изменение текста аннулирует approval, изменённое одобрение не пропускается молча.
-Не меняются ни старые v1/v2, ни действующий v3, ни custom. Расширение реального пака — отдельный будущий проверенный этап.
+Не меняются ни исходные v1/v2, ни действующий v3, ни custom. PSS-008 готовит отдельное v3 предложение; применение требует отдельного будущего ручного процесса.
 
 ## Что пока не готово
 - Полный визуальный smoke 100%/150% DPI и реальный LM Studio: точные результаты и незакрытые gates приведены в отчётах PSS-002 final/ui. Local build/console/static PASS не заменяет живую Gemma или UI acceptance.
@@ -97,4 +113,4 @@ JSON экспорт только в workspace/exports; XML staging только 
 `reports/BASELINE_VERIFICATION.md` — честный статус исходной поставки.
 `BASELINE_MANIFEST.json` — SHA-256 каждого файла исходной поставки.
 
-После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-007; PSS-008 не начат.
+После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-008; следующая задача не начинается автоматически.

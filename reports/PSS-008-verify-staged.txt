@@ -1,0 +1,1 @@
+PENDING exact staged verification; replaced by actual stdout before commit.

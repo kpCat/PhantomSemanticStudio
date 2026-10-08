@@ -65,6 +65,8 @@ partial class MainForm
             btnApplyLesson = new System.Windows.Forms.Button();
             txtSearch = new System.Windows.Forms.TextBox();
             btnSearch = new System.Windows.Forms.Button();
+            btnPackQuality = new System.Windows.Forms.Button();
+            btnV3Proposal = new System.Windows.Forms.Button();
             lblLibraryStats = new System.Windows.Forms.Label();
             gridLibrary = new System.Windows.Forms.DataGridView();
             gridLibraryColumn0 = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -459,9 +461,15 @@ partial class MainForm
             // lblLibraryStats
             lblLibraryStats.Name = "lblLibraryStats";
             lblLibraryStats.Location = new System.Drawing.Point(16, 61);
-            lblLibraryStats.Size = new System.Drawing.Size(1210, 24);
+            lblLibraryStats.Size = new System.Drawing.Size(820, 24);
             lblLibraryStats.Text = "Показано 0 записей.";
             lblLibraryStats.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            btnPackQuality.Name = "btnPackQuality";
+            btnPackQuality.Location = new System.Drawing.Point(866, 58);
+            btnPackQuality.Size = new System.Drawing.Size(360, 30);
+            btnPackQuality.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            btnPackQuality.Text = "Карта качества / ёмкость (advisory)";
+            btnPackQuality.UseVisualStyleBackColor = true;
             // gridLibrary
             gridLibrary.Name = "gridLibrary";
             gridLibrary.Location = new System.Drawing.Point(16, 96);
@@ -681,6 +689,12 @@ partial class MainForm
             btnStageXml.Text = "Создать изолированное XML-предложение";
             btnStageXml.UseVisualStyleBackColor = true;
             btnStageXml.TabIndex = 4;
+            btnV3Proposal.Name = "btnV3Proposal";
+            btnV3Proposal.Location = new System.Drawing.Point(504, 266);
+            btnV3Proposal.Size = new System.Drawing.Size(470, 36);
+            btnV3Proposal.Text = "v3 предложение / offline handoff (без установки)";
+            btnV3Proposal.UseVisualStyleBackColor = true;
+            btnV3Proposal.TabIndex = 5;
             // btnCopyWorkspace
             btnCopyWorkspace.Name = "btnCopyWorkspace";
             btnCopyWorkspace.Location = new System.Drawing.Point(662, 218);
@@ -922,6 +936,7 @@ partial class MainForm
             tabChat.Controls.Add(btnClearChat);
             tabLibrary.Controls.Add(txtSearch);
             tabLibrary.Controls.Add(btnSearch);
+            tabLibrary.Controls.Add(btnPackQuality);
             tabLibrary.Controls.Add(lblLibraryStats);
             tabLibrary.Controls.Add(gridLibrary);
             gridLibrary.Columns.Add(gridLibraryColumn0);
@@ -952,6 +967,7 @@ partial class MainForm
             tabExport.Controls.Add(btnCheckSource);
             tabExport.Controls.Add(btnExport);
             tabExport.Controls.Add(btnStageXml);
+            tabExport.Controls.Add(btnV3Proposal);
             tabExport.Controls.Add(btnCopyWorkspace);
             tabExport.Controls.Add(txtExportLog);
             tabSettings.Controls.Add(lblSourcePath);
@@ -987,6 +1003,7 @@ partial class MainForm
             tabs.Selecting += Tabs_Selecting;
             btnClearChat.Click += ClearChat_Click;
             btnSearch.Click += Search_Click;
+            btnPackQuality.Click += PackQuality_Click;
             gridLibrary.SelectionChanged += LibrarySelection_Changed;
             gridCandidates.CurrentCellChanged += CandidateSelection_Changed;
             btnSaveCandidate.Click += SaveCandidate_Click;
@@ -1000,6 +1017,7 @@ partial class MainForm
             btnCheckSource.Click += CheckSource_Click;
             btnExport.Click += Export_Click;
             btnStageXml.Click += StageXml_Click;
+            btnV3Proposal.Click += V3Proposal_Click;
             btnCopyWorkspace.Click += CopyWorkspace_Click;
             btnBrowseSource.Click += BrowseSource_Click;
             btnSaveSettings.Click += SaveSettings_Click;
@@ -1105,6 +1123,8 @@ partial class MainForm
     private System.Windows.Forms.Button btnClearChat = null!;
     private System.Windows.Forms.TextBox txtSearch = null!;
     private System.Windows.Forms.Button btnSearch = null!;
+    private System.Windows.Forms.Button btnPackQuality = null!;
+    private System.Windows.Forms.Button btnV3Proposal = null!;
     private System.Windows.Forms.Label lblLibraryStats = null!;
     private System.Windows.Forms.DataGridView gridLibrary = null!;
     private System.Windows.Forms.DataGridViewTextBoxColumn gridLibraryColumn0 = null!;

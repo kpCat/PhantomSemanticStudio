@@ -13,6 +13,23 @@ internal static partial class Program
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--pss-008-controls") return Pss008Controls();
+        if (args.Length > 0 && args[0] == "--pss-008-c")
+        { Pss008C(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1; }
+        if (args.Length > 0 && args[0] == "--pss-008-source") return Pss008Source(args);
+        if (args.Length > 0 && args[0] == "--pss-008-handoff") return Pss008Handoff(args);
+        if (args.Length == 2 && args[0] == "--pss-008-inspect-stage")
+        {
+            try
+            { var stage = PathSafety.Canonical(args[1]); V3ProposalContract.ReadStage(Path.GetDirectoryName(Path.GetDirectoryName(stage))!, stage); Console.WriteLine("PASS_V3_STAGE_INTEGRITY"); return 0; }
+            catch { Console.WriteLine("BLOCKED_V3_STAGE_INTEGRITY"); return 2; }
+        }
+        if (args.Length > 0 && args[0] == "--pss-008-b")
+        { Pss008B(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1; }
+        if (args.Length > 0 && args[0] == "--pss-008-a")
+        {
+            Pss008A(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--pss-007-controls") return Pss007Controls();
         if (args.Length > 0 && args[0] == "--pss-007-b")
         {
@@ -334,6 +351,9 @@ internal static partial class Program
         Pss007A();
         await Pss007B();
         await Pss007C();
+        Pss008A();
+        Pss008B();
+        Pss008C();
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;

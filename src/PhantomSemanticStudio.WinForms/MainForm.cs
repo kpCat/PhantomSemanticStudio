@@ -567,6 +567,18 @@ public partial class MainForm : Form
         });
     }
     private void Cancel_Click(object? sender, EventArgs e) { operation?.Cancel(); evidenceRefresh?.Cancel(); }
+    private void PackQuality_Click(object? sender, EventArgs e)
+    {
+        if (!ready || busy) return;
+        if (snapshot == null) { statusLabel.Text = "Сначала импортируйте Semantic Pack."; return; }
+        using var form = new PackQualityForm(); form.SetPack(Snapshot); form.ShowDialog(this);
+    }
+    private void V3Proposal_Click(object? sender, EventArgs e)
+    {
+        if (!ready || busy || !ResolvePendingEdit()) return;
+        if (snapshot == null) { statusLabel.Text = "Сначала импортируйте Semantic Pack."; return; }
+        using var form = new V3ProposalForm(); form.SetContext(Store, Snapshot, session.Candidates); form.ShowDialog(this);
+    }
     private void ChatCorpus_Click(object? sender, EventArgs e)
     {
         if (!ready || busy) return;
