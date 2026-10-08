@@ -92,6 +92,7 @@ partial class MainForm
             txtExportInfo = new System.Windows.Forms.TextBox();
             btnCheckSource = new System.Windows.Forms.Button();
             btnExport = new System.Windows.Forms.Button();
+            btnStageXml = new System.Windows.Forms.Button();
             btnCopyWorkspace = new System.Windows.Forms.Button();
             txtExportLog = new System.Windows.Forms.TextBox();
             lblSourcePath = new System.Windows.Forms.Label();
@@ -631,7 +632,7 @@ partial class MainForm
             txtExportInfo.Name = "txtExportInfo";
             txtExportInfo.Location = new System.Drawing.Point(16, 18);
             txtExportInfo.Size = new System.Drawing.Size(1210, 182);
-            txtExportInfo.Text = "REVIEW_ONLY / NOT_SERVER_VALIDATED\r\nJava-validator: NOT_RUN.\r\n\r\nZIP содержит одобренный JSON, исходный fingerprint и результаты предварительных проверок. XML не экспортируется: условия, profanity/mature и runtime-фильтры не доказаны.\r\n\r\nИсходные файлы L2J/v1/v2/v3/custom не заменяются. Установки и автопубликации нет.\r\n\r\nИзменение источника после импорта блокирует экспорт; изменения текста или отметки ревью отменяют approval. Пол и другие пожелания сохранены в JSON.";
+            txtExportInfo.Text = "НЕ ДЛЯ УСТАНОВКИ / NOT_SERVER_READY\r\n\r\nПрежний REVIEW_ONLY ZIP содержит только одобренный JSON.\r\nОтдельное XML-предложение создаёт физическую копию humanized-файлов в workspace и меняет только два custom XML в этой копии. Нужны подтверждение списка и отдельная редакционная аттестация.\r\n\r\nSTAGED_UNVALIDATED / Java NOT_RUN до отдельной операторской проверки. Java PASS не доказывает игровое поведение.\r\nИсходные L2J/v1/v2/v3/custom не заменяются. Установки и автопубликации нет. Правка отменяет approval; source drift блокирует всю партию.";
             txtExportInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             txtExportInfo.MaxLength = 4000;
             txtExportInfo.Multiline = true;
@@ -644,22 +645,32 @@ partial class MainForm
             btnCheckSource.Size = new System.Drawing.Size(258, 36);
             btnCheckSource.Text = "Проверить неизменность источника";
             btnCheckSource.UseVisualStyleBackColor = true;
+            btnCheckSource.TabIndex = 1;
             // btnExport
             btnExport.Name = "btnExport";
             btnExport.Location = new System.Drawing.Point(292, 218);
             btnExport.Size = new System.Drawing.Size(352, 36);
             btnExport.Text = "Экспорт одобренного для ревью";
             btnExport.UseVisualStyleBackColor = true;
+            btnExport.TabIndex = 2;
+            // btnStageXml
+            btnStageXml.Name = "btnStageXml";
+            btnStageXml.Location = new System.Drawing.Point(16, 266);
+            btnStageXml.Size = new System.Drawing.Size(470, 36);
+            btnStageXml.Text = "Создать изолированное XML-предложение";
+            btnStageXml.UseVisualStyleBackColor = true;
+            btnStageXml.TabIndex = 4;
             // btnCopyWorkspace
             btnCopyWorkspace.Name = "btnCopyWorkspace";
             btnCopyWorkspace.Location = new System.Drawing.Point(662, 218);
             btnCopyWorkspace.Size = new System.Drawing.Size(260, 36);
             btnCopyWorkspace.Text = "Скопировать путь workspace";
             btnCopyWorkspace.UseVisualStyleBackColor = true;
+            btnCopyWorkspace.TabIndex = 3;
             // txtExportLog
             txtExportLog.Name = "txtExportLog";
-            txtExportLog.Location = new System.Drawing.Point(16, 276);
-            txtExportLog.Size = new System.Drawing.Size(1210, 365);
+            txtExportLog.Location = new System.Drawing.Point(16, 318);
+            txtExportLog.Size = new System.Drawing.Size(1210, 323);
             txtExportLog.Text = "Экспорт ещё не выполнялся.";
             txtExportLog.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             txtExportLog.MaxLength = 4000;
@@ -667,6 +678,7 @@ partial class MainForm
             txtExportLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             txtExportLog.ReadOnly = true;
             txtExportLog.MaxLength = 100000;
+            txtExportLog.TabIndex = 5;
             // lblSourcePath
             lblSourcePath.Name = "lblSourcePath";
             lblSourcePath.Location = new System.Drawing.Point(16, 20);
@@ -902,6 +914,7 @@ partial class MainForm
             tabExport.Controls.Add(txtExportInfo);
             tabExport.Controls.Add(btnCheckSource);
             tabExport.Controls.Add(btnExport);
+            tabExport.Controls.Add(btnStageXml);
             tabExport.Controls.Add(btnCopyWorkspace);
             tabExport.Controls.Add(txtExportLog);
             tabSettings.Controls.Add(lblSourcePath);
@@ -944,6 +957,7 @@ partial class MainForm
             btnReject.Click += Reject_Click;
             btnCheckSource.Click += CheckSource_Click;
             btnExport.Click += Export_Click;
+            btnStageXml.Click += StageXml_Click;
             btnCopyWorkspace.Click += CopyWorkspace_Click;
             btnBrowseSource.Click += BrowseSource_Click;
             btnSaveSettings.Click += SaveSettings_Click;
@@ -1076,6 +1090,7 @@ partial class MainForm
     private System.Windows.Forms.TextBox txtExportInfo = null!;
     private System.Windows.Forms.Button btnCheckSource = null!;
     private System.Windows.Forms.Button btnExport = null!;
+    private System.Windows.Forms.Button btnStageXml = null!;
     private System.Windows.Forms.Button btnCopyWorkspace = null!;
     private System.Windows.Forms.TextBox txtExportLog = null!;
     private System.Windows.Forms.Label lblSourcePath = null!;

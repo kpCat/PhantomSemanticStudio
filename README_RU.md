@@ -1,6 +1,6 @@
 # Phantom Semantic Studio · 0.1
 
-Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-002 и ограничения: [reports/PSS-002-final.md](reports/PSS-002-final.md); история PSS-001: [reports/PSS-001-final.md](reports/PSS-001-final.md).
+Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md); история и ограничения PSS-002: [reports/PSS-002-final.md](reports/PSS-002-final.md).
 
 В исходной поставке сборка C#, Visual Studio Designer, LM Studio и Java runtime не запускались. Этот исторический статус сохранён в BASELINE_VERIFICATION.md. PSS-001 выполняет реальные Windows-проверки; LM, Designer, runtime UI/DPI и Java имеют отдельные статусы в итоговом отчёте. Статические проверки структуры не заменяют компиляцию.
 
@@ -26,7 +26,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Verify.ps1
 4. «Импортировать пак»: читаются имеющиеся humanized v1/v2/v3/custom. Функциональный Semantic Pack не редактируется.
 5. «Конструктор»: выберите существующий act/topic, отношения, пол и стиль; напишите пожелания. Тип по умолчанию «Ответ (TEMPLATE)»; «Входная фраза (PATTERN)» создаёт только входы игрока, «Смешанный (MIXED)» допускает оба вида. Выбранный тип ограничивает JSON Schema и повторно проверяется локально у каждого item; неверный kind отклоняет всю партию. Старые GenerationRequest/замечания читаются с MIXED в Core; применение замечания сохраняет явный выбор UI. Партия по умолчанию 6, максимум 20. Контекст включает ограниченную выборку релевантных записей, не весь репозиторий.
 6. «Кандидаты»: проверьте, отредактируйте, сохраните и одобрите каждую нужную запись с отметкой ручного ревью. Входные фразы и ответы различаются. Ошибки не принимаются автоматически; неудачная генерация не запускает бесконечных повторов.
-7. «Экспорт для ревью»: отдельный ZIP с одобренным JSON, baseline и замечаниями, маркированный **REVIEW_ONLY_NOT_SERVER_VALIDATED**. XML не экспортируется: условия, полнота profanity/mature проверки и runtime-фильтры не доказаны. **Java-validator NOT_RUN; не распаковывать поверх сервера.**
+7. «Экспорт для ревью»: прежний отдельный ZIP с одобренным JSON, baseline и замечаниями, **REVIEW_ONLY_NOT_SERVER_VALIDATED**. Эта кнопка не создаёт XML. **Java-validator NOT_RUN; не распаковывать поверх сервера.**
+8. «Создать изолированное XML-предложение»: отдельно подтвердите полный список APPROVED ID (до 20 в UI) и редакционную аттестацию. Весь выбранный batch отклоняется при несовместимой записи; никто не пропускается молча. Только Gender ANY, существующая разговорная topic/act-связка, без placeholders/markup/control, 160 UTF16 после нормализации для PATTERN и 240 UTF-8 bytes для TEMPLATE. Пользователь отдельно проверяет мат/adult, гендерные обороты и ложные игровые утверждения: автоматическое доказательство смысла отсутствует.
+9. В `workspace/proposals/<id>/module/dist/game/data/phantoms` создаётся побайтная копия ровно импортированных файлов. Append только в `semantic/custom/my-social-topics.xml` и `conversation/custom/my-phrases.xml`, deterministic IDs и `override="false"`; existing overrides/comments сохраняются. Остальные SHA/bytes неизменны. Source fingerprint проверяется до/после, правка approval блокирует stage. Atomic .partial→finished; receipt хранит ID/hashes без raw текста. Статус **STAGED_UNVALIDATED / Java NOT_RUN / НЕ ДЛЯ УСТАНОВКИ**.
+
+Отдельная явная операторская проверка готового stage:
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-PSS003-Java.ps1 -StageRoot <абсолютный путь готового workspace\proposals\id>
+```
+Скрипт требует JDK25/Ant и локальные libs; ничего не загружает. Физический scratch внутри stage получает только build.xml/java/test/java/test/resources и dependency JAR (без GameServer/LoginServer/sources JAR). Запускаются штатный `phantom-humanized-v3-content-validate` и узкий `loadV3(..., true)` bridge с baseline/stage counters/hash/ID assertions и отдельной corrupt-копией. Все build/temp/reports только внутри scratch. Копирование ограничено 4000 файлами/256 MiB, свободный scratch budget минимум 512 MiB. Доказательство сохраняется в `oracle-<id>/java-validation.json`, связано с exact staged hashes; исходный receipt остаётся STAGED_UNVALIDATED, GUI не присваивает Java PASS автоматически.
+
+**PASS_JAVA_STAGED / JAVA_CONTENT_VALIDATED_NOT_SERVER_READY** означает только успешную загрузку именно этой физической копии. При недоступном окружении **BLOCKED_JAVA**, при отказе loader **FAILED_JAVA**. Изменившиеся source/stage требуют нового staging и проверки. Ни один статус не разрешает установку или публикацию на сервер.
 
 ## Диалоговое обучение
 «Диалог и обучение» выбирает ответ из импортированного каталога приблизительным C#-инспектором, без вызова Gemma. Показаны pattern/template ID. Это не полная эмуляция сервера: functional-first, identity, социальные gates, gameplay, mood, постоянная память и точный Java selector здесь не воспроизведены.
@@ -36,14 +46,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Verify.ps1
 
 ## Защита исходников
 `PackReader` только читает. `WorkspaceStore` пишет лишь в `%LOCALAPPDATA%\PhantomSemanticStudio\workspace`, проверяя непересечение с source/repository. Junction/symlink-пути отклоняются. Второй экземпляр блокируется workspace.lock. JSON сохраняется через временный файл и замену. Это программные guards, не отдельная OS sandbox против злонамеренного процесса, меняющего пути во время записи.
-Экспорт тоже только в workspace/exports. Нет Process.Start, запуска shell, Ant, Java, Git, сервера или доступа к игровой БД. Нет метода установки/публикации. Отпечаток источника повторно проверяется перед экспортом. Изменение одобренного текста аннулирует approval; изменённое одобрение не пропускается молча.
+JSON экспорт только в workspace/exports; XML staging только в workspace/proposals. Исполняемые Core/GUI не содержат Process.Start, shell, Ant, Java, Git, сервера или доступа к игровой БД. Java operator script отделён от GUI и проверяет только shadow. Нет метода установки/публикации. Отпечаток источника повторно проверяется; изменение текста аннулирует approval, изменённое одобрение не пропускается молча.
 Не меняются ни старые v1/v2, ни действующий v3, ни custom. Расширение реального пака — отдельный будущий проверенный этап.
 
 ## Что пока не готово
 - Полный визуальный smoke 100%/150% DPI и реальный LM Studio: точные результаты и незакрытые gates приведены в отчётах PSS-002 final/ui. Local build/console/static PASS не заменяет живую Gemma или UI acceptance.
 - Полноценный смысловой поиск повторов, грамматический анализ и истинность игровых фактов. Реализованы точные повторы и лексические кандидаты на сходство, не магическая гарантия отсутствия синонимов.
-- Полноценная Java-parity и штатный validator на изолированной копии. До этого экспорт REVIEW_ONLY.
-- Runtime gender/persona-фильтры. JSON сохраняет редакционные ограничения; генерация XML отключена для всех кандидатов.
+- Полноценная Java/runtime-parity: отдельный content gate не подтверждает поведение игры или условия выбора реплики. Реальные результаты PSS-003 перечислены отдельно в final report.
+- Runtime gender/persona-фильтры. JSON сохраняет редакционные ограничения; XML staging блокирует Gender != ANY и любой placeholder.
 - Новые act/topic, fact/recall, игровые действия, мат/mature-авторинг, автоматический монтаж manifest, публикация/rollback рабочего сервера. Не добавлять их тихо в первую задачу.
 - Развитая база знаний/SQLite: starter использует JSON без внешних NuGet. Это заменяемое хранилище, а не игровая DB.
 
@@ -55,4 +65,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Verify.ps1
 `reports/BASELINE_VERIFICATION.md` — честный статус исходной поставки.
 `BASELINE_MANIFEST.json` — SHA-256 каждого файла исходной поставки.
 
-После Codex нужен review ZIP (`scripts/New-ReviewBundle.ps1`) и отчёт. Репозиторий L2J не используется как remote нового приложения.
+После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-003; PSS-004 не начат.

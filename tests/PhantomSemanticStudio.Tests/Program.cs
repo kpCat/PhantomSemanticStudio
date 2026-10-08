@@ -4,7 +4,7 @@ using System.Text.Json;
 using PhantomSemanticStudio.Core;
 
 // Независимый console runner: exit != 0 при любой неуспешной проверке.
-internal static class Program
+internal static partial class Program
 {
     private static int passed;
     private static int failed;
@@ -13,6 +13,13 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "--source-smoke") return await SourceSmoke.RunAsync(args);
+        if (args.Length > 0 && args[0] == "--pss-003-source") return Pss003Source(args);
+        if (args.Length > 0 && args[0] == "--pss-003")
+        {
+            Pss003();
+            Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--pss-002")
         {
             using var focused = new Fixture();
@@ -264,6 +271,7 @@ internal static class Program
             await ThrowsAsync(() => new LmStudioClient(http).ListModelsAsync(new StudioSettings { HighFiveRoot = fixture.Module, TimeoutSeconds = 15 }, "", CancellationToken.None));
         });
         await Pss002(snapshot, store);
+        Pss003();
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;
