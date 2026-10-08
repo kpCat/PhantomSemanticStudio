@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace PhantomSemanticStudio.Core;
 
 /// <summary>Один ограниченный запрос — один ответ. Нет tools, retries, filesystem или исполнения кода.</summary>
-public sealed class LmStudioClient(HttpClient http)
+public sealed partial class LmStudioClient(HttpClient http)
 {
     private const int MaxResponseBytes = 1024 * 1024;
     public async Task<SemanticReviewEvidence> ReviewSemanticAsync(StudioSettings settings, string apiKey, Candidate candidate,

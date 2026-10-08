@@ -12,6 +12,9 @@
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="..\PhantomSemanticStudio.Core\PhantomSemanticStudio.Core.csproj" /></ItemGroup>
   <ItemGroup>
+    <Compile Update="DialogueLabForm.cs"><SubType>Form</SubType></Compile>
+    <Compile Update="DialogueLabForm.Designer.cs"><DependentUpon>DialogueLabForm.cs</DependentUpon></Compile>
+    <EmbeddedResource Update="DialogueLabForm.resx"><DependentUpon>DialogueLabForm.cs</DependentUpon></EmbeddedResource>
     <Compile Update="MainForm.cs"><SubType>Form</SubType></Compile>
     <Compile Update="MainForm.Designer.cs"><DependentUpon>MainForm.cs</DependentUpon></Compile>
     <EmbeddedResource Update="MainForm.resx"><DependentUpon>MainForm.cs</DependentUpon></EmbeddedResource>

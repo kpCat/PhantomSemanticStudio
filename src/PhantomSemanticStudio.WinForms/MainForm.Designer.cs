@@ -118,6 +118,7 @@ partial class MainForm
             btnCheckLm = new System.Windows.Forms.Button();
             btnImport = new System.Windows.Forms.Button();
             btnChatCorpus = new System.Windows.Forms.Button();
+            btnDialogueLab = new System.Windows.Forms.Button();
             txtSettingsResult = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)nudCount).BeginInit();
             ((System.ComponentModel.ISupportInitialize)gridLibrary).BeginInit();
@@ -831,6 +832,13 @@ partial class MainForm
             btnChatCorpus.Text = "Корпус чатов…";
             btnChatCorpus.UseVisualStyleBackColor = true;
             btnChatCorpus.Click += ChatCorpus_Click;
+            btnDialogueLab.Name = "btnDialogueLab";
+            btnDialogueLab.Location = new System.Drawing.Point(910, 601);
+            btnDialogueLab.Size = new System.Drawing.Size(316, 40);
+            btnDialogueLab.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            btnDialogueLab.Text = "Лаборатория диалогов…";
+            btnDialogueLab.UseVisualStyleBackColor = true;
+            btnDialogueLab.Click += DialogueLab_Click;
             // txtSettingsResult
             txtSettingsResult.Name = "txtSettingsResult";
             txtSettingsResult.Location = new System.Drawing.Point(16, 558);
@@ -910,6 +918,7 @@ partial class MainForm
             tabChat.Controls.Add(lblCorrection);
             tabChat.Controls.Add(txtCorrection);
             tabChat.Controls.Add(btnTeach);
+            tabChat.Controls.Add(btnDialogueLab);
             tabChat.Controls.Add(btnClearChat);
             tabLibrary.Controls.Add(txtSearch);
             tabLibrary.Controls.Add(btnSearch);
@@ -1149,5 +1158,6 @@ partial class MainForm
     private System.Windows.Forms.Button btnCheckLm = null!;
     private System.Windows.Forms.Button btnImport = null!;
     private System.Windows.Forms.Button btnChatCorpus = null!;
+    private System.Windows.Forms.Button btnDialogueLab = null!;
     private System.Windows.Forms.TextBox txtSettingsResult = null!;
 }

@@ -4,6 +4,12 @@ namespace PhantomSemanticStudio.Core;
 public sealed class PackPreview
 {
     private readonly Queue<string> recent = new();
+    internal PackPreview Copy()
+    {
+        var copy = new PackPreview();
+        foreach (var id in recent) copy.recent.Enqueue(id);
+        return copy;
+    }
     public void Reset() => recent.Clear();
     public PreviewResult Reply(PackSnapshot snapshot, string input, string band, string register)
     {
@@ -16,7 +22,7 @@ public sealed class PackPreview
             .ThenByDescending(e => TextRules.Normalize(e.Text).Length).ThenBy(e => e.Id, StringComparer.Ordinal)
             .FirstOrDefault(e => Match(TextRules.Normalize(e.Text), text, out captured));
         if (match == null) return Missing("Совпадение не найдено. Исправление можно оформить кандидатом; автоматического расширения нет.");
-        if (TextRules.IsFunctionalAct(match.Act)) return Missing("Это функциональная/identity-ветка. Её проверяет сервер, а не этот инспектор.");
+        if (TextRules.IsFunctionalAct(match.Act)) return new(true, "", match.Id, "", match.Topic, match.Act, "Это функциональная/identity-ветка. Её проверяет сервер, а не этот инспектор.");
         if (match.Fact.Length > 0 || match.Recall.Length > 0) return new(true, "", match.Id, "", match.Topic, match.Act, "Ветка использует память. Точный ответ здесь не симулируется.");
         var response = snapshot.Entries.Where(e => e.Kind == "TEMPLATE" && e.Act == match.Act && !e.Mature && e.Profanity == "NONE")
             .Where(e => e.Band == "UNKNOWN" || e.Band == band).Where(e => e.Register == "NEUTRAL" || register == "CASUAL")

@@ -570,7 +570,19 @@ public partial class MainForm : Form
     private void ChatCorpus_Click(object? sender, EventArgs e)
     {
         if (!ready || busy) return;
-        using var form = new ChatCorpusForm(); form.SetWorkspace(Store); form.ShowDialog(this);
+        using var form = new ChatCorpusForm(); form.SetWorkspace(Store); form.SetTransferMode(snapshot != null);
+        if (form.ShowDialog(this) != DialogResult.OK || snapshot == null) return;
+        using var lab = new DialogueLabForm(); lab.SetWorkspace(Store); lab.SetPack(Snapshot);
+        lab.SetModel(Model, ReadSettings(), txtApiKey.Text); lab.SetExcerpts(form.SelectedExcerpts); lab.ShowDialog(this);
+        session = Store.LoadSession(); BindLessons();
+    }
+    private void DialogueLab_Click(object? sender, EventArgs e)
+    {
+        if (!ready || busy) return;
+        if (snapshot == null) { statusLabel.Text = "Сначала импортируйте Semantic Pack на вкладке Настройки."; return; }
+        using var form = new DialogueLabForm(); form.SetWorkspace(Store); form.SetPack(Snapshot);
+        form.SetModel(Model, ReadSettings(), txtApiKey.Text); form.ShowDialog(this);
+        session = Store.LoadSession(); BindLessons();
     }
     private async Task RunAsync(string caption, Func<CancellationToken, Task> action)
     {

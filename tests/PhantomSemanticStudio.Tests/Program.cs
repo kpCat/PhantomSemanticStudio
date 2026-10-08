@@ -13,7 +13,25 @@ internal static partial class Program
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
-        if (args.Length > 0 && args[0] == "--pss-006-controls") return Pss006Controls();
+        if (args.Length > 0 && args[0] == "--pss-007-controls") return Pss007Controls();
+        if (args.Length > 0 && args[0] == "--pss-007-b")
+        {
+            await Pss007B(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--pss-007-c")
+        {
+            await Pss007C(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--pss-007-a")
+        {
+            Pss007A(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--pss-006-controls")
+        {
+            var result = Pss006Controls();
+            if (result != 0) foreach (var failure in Failures) Console.WriteLine(failure);
+            return result;
+        }
         if (args.Length > 0 && args[0] == "--pss-006-actual") return Pss006Actual(args);
         if (args.Length > 0 && args[0] == "--pss-006-reopen") return Pss006Reopen(args);
         if (args.Length > 0 && args[0] == "--pss-006-interactive") return Pss006Interactive();
@@ -313,6 +331,9 @@ internal static partial class Program
         await Pss005Persistence();
         await Pss006A();
         Pss006B();
+        Pss007A();
+        await Pss007B();
+        await Pss007C();
         Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL");
         foreach(var failure in Failures) Console.WriteLine(failure);
         return failed==0?0:1;

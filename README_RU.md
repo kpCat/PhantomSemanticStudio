@@ -1,6 +1,6 @@
 # Phantom Semantic Studio · 0.1
 
-Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-006: [reports/PSS-006-final.md](reports/PSS-006-final.md), [UI evidence](reports/PSS-006-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
+Отдельная C# WinForms-программа для расширения **разговорного** Semantic Pack High Five под контролем редактора. Текущий checkpoint PSS-007: [reports/PSS-007-final.md](reports/PSS-007-final.md), [UI evidence](reports/PSS-007-ui.md); Java content evidence прежнего PSS-003: [reports/PSS-003-final.md](reports/PSS-003-final.md).
 
 В исходной поставке сборка C#, Visual Studio Designer, LM Studio и Java runtime не запускались. Этот исторический статус сохранён в BASELINE_VERIFICATION.md. PSS-001 выполняет реальные Windows-проверки; LM, Designer, runtime UI/DPI и Java имеют отдельные статусы в итоговом отчёте. Статические проверки структуры не заменяют компиляцию.
 
@@ -14,6 +14,7 @@
 Контролы находятся в `MainForm.Designer.cs`; конструктор формы не обращается к файлам/API. Все вкладки и controls объявлены статически, без циклов в InitializeComponent.
 Модальная форма выбора партии: `StageSelectionForm.cs` → «Открыть конструктор»; `.Designer.cs` и `.resx` вложены в проекте. Её конструктор тоже содержит только `InitializeComponent()`.
 Окно корпуса: `ChatCorpusForm.cs` → «Открыть конструктор», со статическими `.Designer.cs`/`.resx` и безопасным конструктором. Static verification не заменяет настоящий VS round-trip.
+Лаборатория: `DialogueLabForm.cs` → «Открыть конструктор»; зависимости задаются после конструктора, layout/events в `.Designer.cs`, ресурсы в `.resx`.
 
 Из PowerShell:
 ```
@@ -64,6 +65,17 @@ Evidence содержит ID/hashes/provenance/verdict/reason/model/UTC, мак�
 
 Сохранённый семантический совет теперь проверяется в фоне с отдельной отменой. Пока проверка не закончилась, показывается STALE; смена кандидата/правка/отмена не позволяют старой операции перерисовать новый выбор. BAD_RESPONSE показывает безопасный этап отказа (envelope/content/schema/finish/refusal/tools), без сырого ответа или повторного запроса.
 
+## Лаборатория диалогов PSS-007
+На вкладке «Диалог и обучение» после импорта пака откройте «Лабораторию диалогов». PACK отвечает только буквальным текстом существующего каталога; trace показывает PatternId, TemplateId, act/topic и fingerprint. Статусы PACK_CATALOG_APPROXIMATE / NOT_JAVA_RUNTIME_PARITY обязательны: это C# inspector. NO_PACK_MATCH означает отсутствие ответа, а functional/memory/placeholder варианты явно unsupported. AUTO/GAME/REAL/MIXED меняют редакционную гипотезу, не Java-поведение и не исходную реплику. До 200 реплик; input до 1024 символов, match до 256 без усечения.
+
+Наставник по умолчанию выключен. Включите «Gemma помогает», подготовьте context preview, вручную замаскируйте его и подтвердите один локальный запрос, затем нажмите «Спросить Gemma». MENTOR — отдельная роль, не ответ фантома. Контекст ограничен последними 10 репликами / 8 KiB, вопрос один на turn, общий бюджет 20 запросов на лабораторию. Ответ на уточнение принимается только отдельным подтверждением world. Смена контекста/источника или Cancel блокирует устаревший результат; отзыв разрешения до POST отменяет отправку. Автоматических повторов/загрузки модели нет.
+
+Предложение переносится в редактируемую заметку отдельной кнопкой. Несохранённая правка требует Save/Discard/Cancel. Сохранение scoped lesson требует существующих act/topic, явных Band/Register/Gender и проверки точного scope; изменение scope сбрасывает подтверждение. Candidates/approval/XML не меняются. История эфемерна; отдельное явное сохранение создаёт bounded private `workspace/labs` JSON без token, без автоматического восстановления.
+
+В корпусе вручную отметьте 1–20 public строк, проверьте полный sanitized preview и подтвердите перенос в лабораторию. Из лаборатории отдельно отметьте 1–3 фрагмента, задайте manual language override для каждого, при необходимости измените текст. Проверьте точный outbound preview: scrub приблизительный, имена в свободном тексте нужно убрать вручную. Два независимых разрешения перед каждым запросом — PII review и передача локальной Gemma. По отдельной кнопке возможны предложения транслита/перевода/UNKNOWN; mentor opt-in не заменяет corpus consent. Исходный корпус immutable, AI-предложение только заметка, не установка/обучение. Снятие выбора/consent во время preflight отменяет передачу.
+
+Offline: `--pss-007-a`, `--pss-007-b`, `--pss-007-c` у console runner. STA: `dotnet exec --runtimeconfig src/PhantomSemanticStudio.WinForms/bin/Release/net10.0-windows/PhantomSemanticStudio.runtimeconfig.json tests/PhantomSemanticStudio.Tests/bin/Release/net10.0/PhantomSemanticStudio.Tests.dll --pss-007-controls`. Дополнительный static/privacy/encoding/scope gate: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Verify-PSS007.ps1 -GitScope`. LM/UI/DPI/VS/Java статусы отдельно в отчёте, synthetic HTTP не подтверждает live Gemma.
+
 ## Защита исходников
 `PackReader` только читает. `WorkspaceStore` пишет лишь в `%LOCALAPPDATA%\PhantomSemanticStudio\workspace`, проверяя непересечение с source/repository. Junction/symlink-пути отклоняются. Второй экземпляр блокируется workspace.lock. JSON сохраняется через временный файл и замену. Это программные guards, не отдельная OS sandbox против злонамеренного процесса, меняющего пути во время записи.
 JSON экспорт только в workspace/exports; XML staging только в workspace/proposals. Исполняемые Core/GUI не содержат Process.Start, shell, Ant, Java, Git, сервера или доступа к игровой БД. Java operator script отделён от GUI и проверяет только shadow. Нет метода установки/публикации. Отпечаток источника повторно проверяется; изменение текста аннулирует approval, изменённое одобрение не пропускается молча.
@@ -75,7 +87,7 @@ JSON экспорт только в workspace/exports; XML staging только 
 - Полноценная Java/runtime-parity: отдельный content gate не подтверждает поведение игры или условия выбора реплики. Реальные результаты PSS-003 перечислены отдельно в final report.
 - Runtime gender/persona-фильтры. JSON сохраняет редакционные ограничения; XML staging блокирует Gender != ANY и любой placeholder.
 - Новые act/topic, fact/recall, игровые действия, мат/mature-авторинг, автоматический монтаж manifest, публикация/rollback рабочего сервера. Не добавлять их тихо в первую задачу.
-- Анализ корпуса моделью и обучение: PSS-006 содержит только локальный corpus SQLite, ручной просмотр и языковой triage. PSS-007 не начат.
+- Массовый анализ корпуса и обучение весов. PSS-007 допускает только 1–3 явно проверенных public отрывка в отдельном локальном запросе; предложения остаются редакционными.
 
 ## Структура
 `src/PhantomSemanticStudio.Core` — reader, безопасные пути, workspace, проверка кандидатов, клиент LM Studio, inspector, review export.
@@ -85,4 +97,4 @@ JSON экспорт только в workspace/exports; XML staging только 
 `reports/BASELINE_VERIFICATION.md` — честный статус исходной поставки.
 `BASELINE_MANIFEST.json` — SHA-256 каждого файла исходной поставки.
 
-После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-006; PSS-007 не начат.
+После Codex ревью ведётся непосредственно в публичном GitHub main по exact commit/diff, inventory и журналам отчёта. Codex не создаёт review/source ZIP и не запускает New-ReviewBundle. Пользовательский JSON review ZIP приложения сохраняется. Репозиторий L2J не используется как remote нового приложения. STOP после PSS-007; PSS-008 не начат.

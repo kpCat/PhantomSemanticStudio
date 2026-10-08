@@ -43,6 +43,8 @@ partial class ChatCorpusForm
         txtSelected = new System.Windows.Forms.TextBox();
         txtDetails = new System.Windows.Forms.TextBox();
         lblStatus = new System.Windows.Forms.Label();
+        chkTransferReviewed = new System.Windows.Forms.CheckBox();
+        btnTransfer = new System.Windows.Forms.Button();
         ((System.ComponentModel.ISupportInitialize)nudMinLength).BeginInit();
         ((System.ComponentModel.ISupportInitialize)nudMaxLength).BeginInit();
         SuspendLayout();
@@ -237,6 +239,24 @@ partial class ChatCorpusForm
         lblStatus.Size = new System.Drawing.Size(1256, 30);
         lblStatus.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
         lblStatus.Text = "SOURCE_MATERIAL_ONLY. Никакого автоматического обучения.";
+        chkTransferReviewed.Name = "chkTransferReviewed";
+        chkTransferReviewed.Location = new System.Drawing.Point(830, 265);
+        chkTransferReviewed.Size = new System.Drawing.Size(438, 32);
+        chkTransferReviewed.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+        chkTransferReviewed.Text = "Проверил полный preview и PII; разрешаю перенос";
+        chkTransferReviewed.Checked = false;
+        chkTransferReviewed.TabIndex = 22;
+        btnTransfer.Name = "btnTransfer";
+        btnTransfer.Location = new System.Drawing.Point(1030, 235);
+        btnTransfer.Size = new System.Drawing.Size(238, 28);
+        btnTransfer.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+        btnTransfer.Text = "Передать в лабораторию";
+        btnTransfer.Enabled = false;
+        btnTransfer.TabIndex = 23;
+        btnTransfer.Click += Transfer_Click;
+        lblSelected.Size = new System.Drawing.Size(190, 24);
+        btnClearSelection.Location = new System.Drawing.Point(634, 265);
+        btnClearSelection.Size = new System.Drawing.Size(178, 32);
         Controls.Add(lblPrivacy);
         Controls.Add(txtArchive);
         Controls.Add(btnBrowse);
@@ -264,6 +284,8 @@ partial class ChatCorpusForm
         Controls.Add(txtSelected);
         Controls.Add(txtDetails);
         Controls.Add(lblStatus);
+        Controls.Add(chkTransferReviewed);
+        Controls.Add(btnTransfer);
         AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         ClientSize = new System.Drawing.Size(1280, 834);
@@ -310,4 +332,6 @@ partial class ChatCorpusForm
     private System.Windows.Forms.TextBox txtSelected = null!;
     private System.Windows.Forms.TextBox txtDetails = null!;
     private System.Windows.Forms.Label lblStatus = null!;
+    private System.Windows.Forms.CheckBox chkTransferReviewed = null!;
+    private System.Windows.Forms.Button btnTransfer = null!;
 }

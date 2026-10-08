@@ -12,11 +12,15 @@ public partial class ChatCorpusForm : Form
     private long total;
     private string activeCorpus = "";
     private readonly Dictionary<string, CorpusRecord> selected = new(StringComparer.Ordinal);
+    private bool transferMode;
+    private long selectionVersion;
+    public IReadOnlyList<SanitizedCorpusExcerpt> SelectedExcerpts { get; private set; } = Array.AsReadOnly(Array.Empty<SanitizedCorpusExcerpt>());
     public ChatCorpusForm()
     {
         InitializeComponent();
     }
     public void SetWorkspace(WorkspaceStore workspace) => corpusStore = new CorpusStore(workspace);
+    public void SetTransferMode(bool enabled) { transferMode = enabled; btnTransfer.Enabled = enabled && selected.Count > 0; }
     private CorpusStore Store => corpusStore ?? throw new InvalidOperationException("Workspace корпуса не открыт.");
     private CorpusMetadata? CurrentCorpus => cmbCorpus.SelectedItem as CorpusMetadata;
     private async void Corpus_Shown(object? sender, EventArgs e) => await RunAsync(RefreshCorporaAsync);
@@ -99,6 +103,7 @@ public partial class ChatCorpusForm : Form
     private void Row_Checked(object? sender, ItemCheckEventArgs e)
     {
         if (binding || listRows.Items[e.Index].Tag is not CorpusRecord row) return;
+        operation?.Cancel();
         if (e.NewValue == CheckState.Checked)
         {
             if (selected.Count == 20) { e.NewValue = CheckState.Unchecked; lblStatus.Text = "Предел 20 фрагментов. Снимите отметку вручную перед новым выбором."; return; }
@@ -109,6 +114,9 @@ public partial class ChatCorpusForm : Form
     }
     private void UpdateSelection()
     {
+        selectionVersion++;
+        chkTransferReviewed.Checked = false;
+        btnTransfer.Enabled = transferMode && selected.Count > 0 && operation == null;
         lblSelected.Text = $"Выбрано явно: {selected.Count}/20 • SOURCE_MATERIAL_ONLY";
         txtSelected.Text = string.Join("\r\n\r\n", selected.Values.Select(r => $"SOURCE_MATERIAL_ONLY • {activeCorpus}/{r.Id}\r\n{r.Timestamp} ({"timezone unspecified"}) • {r.Channel}\r\n{r.Preview}"));
     }
@@ -120,16 +128,35 @@ public partial class ChatCorpusForm : Form
     }
     private void ClearSelection_Click(object? sender, EventArgs e)
     {
+        operation?.Cancel();
         selected.Clear(); binding = true; try { foreach (ListViewItem item in listRows.Items) item.Checked = false; }
         finally { binding = false; } UpdateSelection();
     }
     private void Cancel_Click(object? sender, EventArgs e) => operation?.Cancel();
+    private async void Transfer_Click(object? sender, EventArgs e)
+    {
+        if (!transferMode || !chkTransferReviewed.Checked || CurrentCorpus == null || selected.Count is < 1 or > 20)
+        { lblStatus.Text = "Проверьте полный sanitized preview справа и явно разрешите перенос 1–20 public фрагментов. LM не вызывается."; return; }
+        var corpus = CurrentCorpus; var rows = selected.Values.ToArray(); var version = selectionVersion;
+        IReadOnlyList<SanitizedCorpusExcerpt>? transfer = null;
+        await RunAsync(async token =>
+        {
+            var fresh = await Task.Run(() => Store.List(token).Single(c => c.Id == corpus.Id), token);
+            token.ThrowIfCancellationRequested();
+            if (version != selectionVersion || !chkTransferReviewed.Checked) throw new OperationCanceledException(token);
+            if (fresh.DatasetHash != corpus.DatasetHash) throw new InvalidDataException("STALE: корпус изменён.");
+            transfer = CorpusDialogueBridge.Detach(fresh, rows, chkTransferReviewed.Checked);
+        });
+        if (transfer == null || version != selectionVersion || !chkTransferReviewed.Checked) return;
+        SelectedExcerpts = transfer; DialogResult = DialogResult.OK; Close();
+    }
     private async Task RunAsync(Func<CancellationToken, Task> action)
     {
         if (operation != null) return;
         using var cancel = new CancellationTokenSource(); operation = cancel;
         btnCancel.Enabled = true; btnImport.Enabled = false; btnBrowse.Enabled = false; cmbCorpus.Enabled = false;
         btnSearch.Enabled = false; btnPrevious.Enabled = false; btnNext.Enabled = false; btnRefresh.Enabled = false; listRows.Enabled = false;
+        btnTransfer.Enabled = false; chkTransferReviewed.Enabled = false;
         lblStatus.Text = "Локальная операция… отмена доступна.";
         try { await action(cancel.Token); }
         catch (OperationCanceledException) { lblStatus.Text = "Отменено. Прежний committed корпус сохранён; partial не опубликован."; }
@@ -151,10 +178,12 @@ public partial class ChatCorpusForm : Form
         {
             operation = null; btnCancel.Enabled = false; btnImport.Enabled = true; btnBrowse.Enabled = true; cmbCorpus.Enabled = true;
             btnSearch.Enabled = true; btnPrevious.Enabled = page > 0; btnNext.Enabled = (page + 1L) * 100 < total; btnRefresh.Enabled = true; listRows.Enabled = true;
+            btnTransfer.Enabled = transferMode && selected.Count > 0; chkTransferReviewed.Enabled = true;
         }
     }
     private void Corpus_Closing(object? sender, FormClosingEventArgs e)
     {
         if (operation != null) { operation.Cancel(); e.Cancel = true; lblStatus.Text = "Отмена запрошена; закройте после завершения операции."; }
+        else if (DialogResult != DialogResult.OK) SelectedExcerpts = Array.AsReadOnly(Array.Empty<SanitizedCorpusExcerpt>());
     }
 }

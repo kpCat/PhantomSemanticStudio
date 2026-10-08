@@ -31,8 +31,9 @@ internal static partial class Program
         {
             var timer = Stopwatch.StartNew();
             do { doEvents.Invoke(null, null); Thread.Sleep(5); }
-            while ((bool)Control(ui, "btnCancel").Enabled && timer.Elapsed < TimeSpan.FromSeconds(20));
-            True(!Control(ui, "btnCancel").Enabled); doEvents.Invoke(null, null);
+            while (!(bool)ui.IsDisposed && (bool)Control(ui, "btnCancel").Enabled && timer.Elapsed < TimeSpan.FromSeconds(20));
+            if (!(bool)ui.IsDisposed) True(!Control(ui, "btnCancel").Enabled);
+            doEvents.Invoke(null, null);
         }
         using var f = new Fixture();
         var segment = Path.Combine(f.Module, "dist/game/data/phantoms/conversation/humanized/v3/segments/test.xml");
