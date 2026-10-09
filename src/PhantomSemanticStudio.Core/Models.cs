@@ -139,4 +139,9 @@ public sealed record EditorialLesson
         return new GenerationRequest(Topic, Act, Band, Register, Gender, Text, "", 6);
     }
 }
-public sealed record PreviewResult(bool Matched, string Text, string PatternId, string TemplateId, string Topic, string Act, string Note);
+public enum PreviewStatus { NO_PACK_MATCH, PACK_CATALOG_APPROXIMATE, FUNCTIONAL_OR_MEMORY_UNSUPPORTED, TEMPLATE_CONTEXT_UNAVAILABLE, NO_ELIGIBLE_TEMPLATE }
+public sealed record PreviewResult(bool Matched, string Text, string PatternId, string TemplateId, string Topic, string Act, string Note)
+{
+    // Matched retains the original pattern-found contract; Status describes whether a reply is available.
+    public PreviewStatus Status { get; init; } = Matched && Text.Length > 0 ? PreviewStatus.PACK_CATALOG_APPROXIMATE : PreviewStatus.NO_PACK_MATCH;
+}

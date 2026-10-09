@@ -105,14 +105,12 @@ public sealed partial class DialogueLabSession
         var reply = preview.Reply(baseline, input, band, register);
         var pattern = baseline.Entries.FirstOrDefault(e => e.Kind == "PATTERN" && e.Id == reply.PatternId);
         var template = baseline.Entries.FirstOrDefault(e => e.Kind == "TEMPLATE" && e.Id == reply.TemplateId);
-        var unsupported = pattern != null && (TextRules.IsFunctionalAct(pattern.Act) || pattern.Fact.Length > 0 || pattern.Recall.Length > 0)
-            || template != null && (template.Text.Contains('{') || template.Text.Contains('}'));
-        var matched = !unsupported && template != null && reply.Text.Length > 0 && reply.Text == template.Text;
-        var status = unsupported ? "FUNCTIONAL_OR_MEMORY_UNSUPPORTED" : matched ? "PACK_CATALOG_APPROXIMATE" : "NO_PACK_MATCH";
+        var matched = reply.Status == PreviewStatus.PACK_CATALOG_APPROXIMATE && reply.Text.Length > 0;
+        var status = reply.Status.ToString();
         var notes = "NOT_JAVA_RUNTIME_PARITY / WORLD_ADVISORY_ONLY. " + reply.Note;
         if (pattern != null) notes += $" Priority={pattern.Priority}; pattern source={pattern.SourceFile}:{pattern.SourceLine}.";
         if (template != null) notes += $" Template source={template.SourceFile}:{template.SourceLine}.";
-        if (unsupported) notes += " Подстановки, identity и память не симулируются; ответа каталога без них нет.";
+        if (reply.Status == PreviewStatus.FUNCTIONAL_OR_MEMORY_UNSUPPORTED) notes += " Identity, игровые действия и память не симулируются.";
         token.ThrowIfCancellationRequested();
         var turn = new DialogueTurn(Guid.NewGuid().ToString("N"), input, scope.ToString(), hint.ToString(), ambiguous,
             status, reply.PatternId, reply.TemplateId, reply.Act, reply.Topic, baseline.Fingerprint, matched ? reply.Text : "", notes);
@@ -157,7 +155,7 @@ public sealed partial class DialogueLabSession
         static WorldScope Detect(string text)
         {
             var words = TextRules.Normalize(text).Split(' ');
-            var game = words.Any(w => w is "рейд" or "антарас" or "antharas" or "дроп" or "фарм" or "pvp" or "рейдбосс" || w.StartsWith("рейд", StringComparison.Ordinal));
+            var game = words.Any(w => w is "рейд" or "антарас" or "antharas" or "дроп" or "фарм" or "pvp" or "пвп" or "рейдбосс" || w.StartsWith("рейд", StringComparison.Ordinal));
             var real = words.Any(w => w.StartsWith("начальник", StringComparison.Ordinal) || w.StartsWith("работ", StringComparison.Ordinal) || w is "офис" or "зарплата");
             return game && real ? WorldScope.MIXED : game ? WorldScope.GAME : real ? WorldScope.REAL : WorldScope.UNKNOWN;
         }
