@@ -3,6 +3,8 @@ namespace PhantomSemanticStudio.WinForms;
 
 partial class V3ProposalForm
 {
+    private System.Windows.Forms.TableLayoutPanel layoutRoot = null!;
+    private System.Windows.Forms.Panel contentRoot = null!;
     private System.ComponentModel.IContainer? components = null;
     protected override void Dispose(bool disposing)
     { if (disposing) components?.Dispose(); base.Dispose(disposing); }
@@ -12,7 +14,27 @@ partial class V3ProposalForm
         lblSource = new Label(); lblPair = new Label(); cmbPair = new ComboBox(); btnSelect = new Button(); txtPreview = new TextBox();
         chkSelection = new CheckBox(); chkEditorial = new CheckBox(); btnStage = new Button();
         btnProof = new Button(); txtProof = new TextBox(); chkRelease = new CheckBox(); btnRelease = new Button(); btnCancel = new Button(); lblStatus = new Label();
+        layoutRoot = new System.Windows.Forms.TableLayoutPanel();
+        contentRoot = new System.Windows.Forms.Panel();
+        layoutRoot.SuspendLayout();
+        contentRoot.SuspendLayout();
         SuspendLayout();
+        layoutRoot.Name = "layoutRoot";
+        layoutRoot.Size = new System.Drawing.Size(980, 810);
+        layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        layoutRoot.AutoScroll = true;
+        layoutRoot.ColumnCount = 1;
+        layoutRoot.RowCount = 1;
+        layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Name = "contentRoot";
+        contentRoot.Size = new System.Drawing.Size(980, 810);
+        contentRoot.MinimumSize = new System.Drawing.Size(980, 810);
+        contentRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        contentRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Padding = new System.Windows.Forms.Padding(0);
+
         lblSource.Name = "lblSource"; lblSource.Location = new System.Drawing.Point(16, 12); lblSource.Size = new System.Drawing.Size(948, 54);
         lblSource.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right; lblSource.Text = "SOURCE / STAGED_V3_UNVALIDATED / NOT_INSTALLED / NOT_RUNTIME_PARITY";
         lblPair.Name = "lblPair"; lblPair.Location = new System.Drawing.Point(16, 74); lblPair.Size = new System.Drawing.Size(300, 24);
@@ -47,15 +69,20 @@ partial class V3ProposalForm
         btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left; btnCancel.Text = "Отменить"; btnCancel.Enabled = false; btnCancel.TabIndex = 10;
         lblStatus.Name = "lblStatus"; lblStatus.Location = new System.Drawing.Point(16, 754); lblStatus.Size = new System.Drawing.Size(948, 40);
         lblStatus.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right; lblStatus.Text = "Исходный L2J строго READ_ONLY. Установки нет.";
-        Controls.Add(lblSource); Controls.Add(lblPair); Controls.Add(cmbPair); Controls.Add(btnSelect); Controls.Add(txtPreview);
-        Controls.Add(chkSelection); Controls.Add(chkEditorial); Controls.Add(btnStage); Controls.Add(btnProof); Controls.Add(txtProof);
-        Controls.Add(chkRelease); Controls.Add(btnRelease); Controls.Add(btnCancel); Controls.Add(lblStatus);
+        contentRoot.Controls.Add(lblSource); contentRoot.Controls.Add(lblPair); contentRoot.Controls.Add(cmbPair); contentRoot.Controls.Add(btnSelect); contentRoot.Controls.Add(txtPreview);
+        contentRoot.Controls.Add(chkSelection); contentRoot.Controls.Add(chkEditorial); contentRoot.Controls.Add(btnStage); contentRoot.Controls.Add(btnProof); contentRoot.Controls.Add(txtProof);
+        contentRoot.Controls.Add(chkRelease); contentRoot.Controls.Add(btnRelease); contentRoot.Controls.Add(btnCancel); contentRoot.Controls.Add(lblStatus);
         Shown += Proposal_Shown; FormClosing += Proposal_Closing; cmbPair.SelectedIndexChanged += Pair_Changed;
         btnSelect.Click += Select_Click; btnStage.Click += Stage_Click; btnProof.Click += Proof_Click; btnRelease.Click += Release_Click; btnCancel.Click += Cancel_Click;
         chkSelection.CheckedChanged += Consent_Changed; chkEditorial.CheckedChanged += Consent_Changed; chkRelease.CheckedChanged += Consent_Changed;
         AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F); AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new System.Drawing.Size(980, 810); MinimumSize = new System.Drawing.Size(980, 840);
-        AutoScroll = true; Name = "V3ProposalForm"; Text = "v3 предложение и offline handoff — НЕ УСТАНОВКА"; StartPosition = FormStartPosition.CenterParent;
+        ClientSize = new System.Drawing.Size(980, 810); MinimumSize = new System.Drawing.Size(760, 420);
+        AutoScroll = false; Name = "V3ProposalForm"; Text = "v3 предложение и offline handoff — НЕ УСТАНОВКА"; StartPosition = FormStartPosition.CenterParent;
+        layoutRoot.Controls.Add(contentRoot, 0, 0);
+        Controls.Add(layoutRoot);
+        contentRoot.ResumeLayout(false);
+        layoutRoot.ResumeLayout(false);
+        layoutRoot.PerformLayout();
         ResumeLayout(false); PerformLayout();
     }
     #endregion

@@ -3,6 +3,8 @@ namespace PhantomSemanticStudio.WinForms;
 
 partial class PackQualityForm
 {
+    private System.Windows.Forms.TableLayoutPanel layoutRoot = null!;
+    private System.Windows.Forms.Panel contentRoot = null!;
     private System.ComponentModel.IContainer? components = null;
     protected override void Dispose(bool disposing)
     { if (disposing) components?.Dispose(); base.Dispose(disposing); }
@@ -16,7 +18,27 @@ partial class PackQualityForm
         colBand = new ColumnHeader(); colRegister = new ColumnHeader(); colSource = new ColumnHeader();
         colCount = new ColumnHeader(); colClean = new ColumnHeader(); colDiversity = new ColumnHeader(); colWarning = new ColumnHeader();
         txtDetails = new TextBox(); lblStatus = new Label(); btnAnalyze = new Button(); btnCancel = new Button();
+        layoutRoot = new System.Windows.Forms.TableLayoutPanel();
+        contentRoot = new System.Windows.Forms.Panel();
+        layoutRoot.SuspendLayout();
+        contentRoot.SuspendLayout();
         SuspendLayout();
+        layoutRoot.Name = "layoutRoot";
+        layoutRoot.Size = new System.Drawing.Size(980, 730);
+        layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        layoutRoot.AutoScroll = true;
+        layoutRoot.ColumnCount = 1;
+        layoutRoot.RowCount = 1;
+        layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Name = "contentRoot";
+        contentRoot.Size = new System.Drawing.Size(980, 730);
+        contentRoot.MinimumSize = new System.Drawing.Size(980, 730);
+        contentRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        contentRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Padding = new System.Windows.Forms.Padding(0);
+
         lblSource.Name = "lblSource"; lblSource.Location = new System.Drawing.Point(16, 12); lblSource.Size = new System.Drawing.Size(948, 60);
         lblSource.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         lblSource.Text = "SOURCE / ADVISORY / NOT_RUNTIME_PARITY / NOT_INSTALLED";
@@ -49,16 +71,21 @@ partial class PackQualityForm
         btnAnalyze.Anchor = AnchorStyles.Bottom | AnchorStyles.Left; btnAnalyze.Text = "Рассчитать карту и ёмкость"; btnAnalyze.Enabled = false; btnAnalyze.TabIndex = 7;
         btnCancel.Name = "btnCancel"; btnCancel.Location = new System.Drawing.Point(310, 678); btnCancel.Size = new System.Drawing.Size(180, 34);
         btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left; btnCancel.Text = "Отменить"; btnCancel.Enabled = false; btnCancel.TabIndex = 8;
-        Controls.Add(lblSource); Controls.Add(lblFilters); Controls.Add(cmbTopic); Controls.Add(cmbAct); Controls.Add(cmbBand);
-        Controls.Add(cmbRegister); Controls.Add(cmbSource); Controls.Add(listRows); Controls.Add(txtDetails); Controls.Add(lblStatus);
-        Controls.Add(btnAnalyze); Controls.Add(btnCancel);
+        contentRoot.Controls.Add(lblSource); contentRoot.Controls.Add(lblFilters); contentRoot.Controls.Add(cmbTopic); contentRoot.Controls.Add(cmbAct); contentRoot.Controls.Add(cmbBand);
+        contentRoot.Controls.Add(cmbRegister); contentRoot.Controls.Add(cmbSource); contentRoot.Controls.Add(listRows); contentRoot.Controls.Add(txtDetails); contentRoot.Controls.Add(lblStatus);
+        contentRoot.Controls.Add(btnAnalyze); contentRoot.Controls.Add(btnCancel);
         cmbTopic.SelectedIndexChanged += Filter_Changed; cmbAct.SelectedIndexChanged += Filter_Changed; cmbBand.SelectedIndexChanged += Filter_Changed;
         cmbRegister.SelectedIndexChanged += Filter_Changed; cmbSource.SelectedIndexChanged += Filter_Changed;
         listRows.ColumnClick += Sort_Click; listRows.SelectedIndexChanged += Row_Selected;
         btnAnalyze.Click += Analyze_Click; btnCancel.Click += Cancel_Click; FormClosing += Quality_Closing;
         AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F); AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new System.Drawing.Size(980, 730); MinimumSize = new System.Drawing.Size(980, 760);
-        AutoScroll = true; Name = "PackQualityForm"; Text = "Качество и покрытие Semantic Pack — advisory"; StartPosition = FormStartPosition.CenterParent;
+        ClientSize = new System.Drawing.Size(980, 730); MinimumSize = new System.Drawing.Size(760, 420);
+        AutoScroll = false; Name = "PackQualityForm"; Text = "Качество и покрытие Semantic Pack — advisory"; StartPosition = FormStartPosition.CenterParent;
+        layoutRoot.Controls.Add(contentRoot, 0, 0);
+        Controls.Add(layoutRoot);
+        contentRoot.ResumeLayout(false);
+        layoutRoot.ResumeLayout(false);
+        layoutRoot.PerformLayout();
         ResumeLayout(false); PerformLayout();
     }
     #endregion

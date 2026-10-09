@@ -3,6 +3,8 @@ namespace PhantomSemanticStudio.WinForms;
 
 partial class DialogueLabForm
 {
+    private System.Windows.Forms.TableLayoutPanel layoutRoot = null!;
+    private System.Windows.Forms.Panel contentRoot = null!;
     private System.ComponentModel.IContainer? components = null;
     protected override void Dispose(bool disposing)
     {
@@ -71,7 +73,27 @@ partial class DialogueLabForm
         tabDialogue.SuspendLayout();
         tabMentor.SuspendLayout();
         tabCorpus.SuspendLayout();
+        layoutRoot = new System.Windows.Forms.TableLayoutPanel();
+        contentRoot = new System.Windows.Forms.Panel();
+        layoutRoot.SuspendLayout();
+        contentRoot.SuspendLayout();
         SuspendLayout();
+        layoutRoot.Name = "layoutRoot";
+        layoutRoot.Size = new System.Drawing.Size(1280, 840);
+        layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        layoutRoot.AutoScroll = true;
+        layoutRoot.ColumnCount = 1;
+        layoutRoot.RowCount = 1;
+        layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Name = "contentRoot";
+        contentRoot.Size = new System.Drawing.Size(1280, 840);
+        contentRoot.MinimumSize = new System.Drawing.Size(1280, 840);
+        contentRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        contentRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Padding = new System.Windows.Forms.Padding(0);
+
         lblSource.Name = "lblSource";
         lblSource.Location = new System.Drawing.Point(12, 8);
         lblSource.Size = new System.Drawing.Size(1256, 44);
@@ -504,19 +526,19 @@ partial class DialogueLabForm
         tabCorpus.Controls.Add(listSuggestions);
         tabCorpus.Controls.Add(txtCorpusAdvice);
         tabCorpus.Controls.Add(btnUseSuggestion);
-        Controls.Add(lblSource);
-        Controls.Add(cmbWorld);
-        Controls.Add(cmbBand);
-        Controls.Add(cmbRegister);
-        Controls.Add(lblContext);
-        Controls.Add(btnClear);
-        Controls.Add(btnCancel);
-        Controls.Add(tabsLab);
-        Controls.Add(lblStatus);
+        contentRoot.Controls.Add(lblSource);
+        contentRoot.Controls.Add(cmbWorld);
+        contentRoot.Controls.Add(cmbBand);
+        contentRoot.Controls.Add(cmbRegister);
+        contentRoot.Controls.Add(lblContext);
+        contentRoot.Controls.Add(btnClear);
+        contentRoot.Controls.Add(btnCancel);
+        contentRoot.Controls.Add(tabsLab);
+        contentRoot.Controls.Add(lblStatus);
         AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
         ClientSize = new System.Drawing.Size(1280, 840);
-        MinimumSize = new System.Drawing.Size(1200, 800);
+        MinimumSize = new System.Drawing.Size(760, 420);
         Name = "DialogueLabForm";
         Text = "Лаборатория диалогов — каталог и отдельный наставник";
         StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
@@ -527,6 +549,12 @@ partial class DialogueLabForm
         tabMentor.ResumeLayout(false);
         tabMentor.PerformLayout();
         tabCorpus.ResumeLayout(false);
+        AutoScroll = false;
+        layoutRoot.Controls.Add(contentRoot, 0, 0);
+        Controls.Add(layoutRoot);
+        contentRoot.ResumeLayout(false);
+        layoutRoot.ResumeLayout(false);
+        layoutRoot.PerformLayout();
         ResumeLayout(false);
         PerformLayout();
     }

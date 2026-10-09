@@ -5,7 +5,7 @@ $root = Split-Path $PSScriptRoot -Parent
 $designer = Get-Content -LiteralPath (Join-Path $root 'src/PhantomSemanticStudio.WinForms/MainForm.Designer.cs') -Raw -Encoding UTF8
 $form = Get-Content -LiteralPath (Join-Path $root 'src/PhantomSemanticStudio.WinForms/MainForm.cs') -Raw -Encoding UTF8
 foreach ($name in @('btnFindSimilar', 'btnSemanticReview')) {
-    if ($designer -notmatch ($name + ' = new System.Windows.Forms.Button\(\);') -or $designer -notmatch ('tabCandidates.Controls.Add\(' + $name + '\)')) { throw ('Missing designed candidate action: ' + $name) }
+    if ($designer -notmatch ($name + ' = new System.Windows.Forms.Button\(\);') -or $designer -notmatch ('contentCandidates.Controls.Add\(' + $name + '\)')) { throw ('Missing designed candidate action: ' + $name) }
 }
 if ($designer -notmatch 'btnFindSimilar.Click \+= FindSimilar_Click' -or $designer -notmatch 'btnSemanticReview.Click \+= SemanticReview_Click') { throw 'Missing semantic events' }
 foreach ($handler in @('FindSimilar_Click', 'SemanticReview_Click')) {

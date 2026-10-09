@@ -26,7 +26,7 @@ foreach ($name in @('PackQualityForm', 'V3ProposalForm')) {
     }
 }
 $main = Get-Content -LiteralPath (Join-Path $root 'src/PhantomSemanticStudio.WinForms/MainForm.Designer.cs') -Raw -Encoding UTF8
-foreach ($entry in @('tabLibrary.Controls.Add(btnPackQuality)', 'tabExport.Controls.Add(btnV3Proposal)', 'btnPackQuality.Click += PackQuality_Click', 'btnV3Proposal.Click += V3Proposal_Click')) {
+foreach ($entry in @('contentLibrary.Controls.Add(btnPackQuality)', 'contentExport.Controls.Add(btnV3Proposal)', 'btnPackQuality.Click += PackQuality_Click', 'btnV3Proposal.Click += V3Proposal_Click')) {
     if (-not $main.Contains($entry)) { throw ('Missing entry: ' + $entry) }
 }
 Write-Output 'PASS PSS-008 static Designer/ctor/resx/nesting/handlers; separate forms; default NO; complete proof preview; NOT physical UI/DPI/VS'

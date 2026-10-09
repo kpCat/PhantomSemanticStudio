@@ -24,7 +24,7 @@ foreach ($contract in @('ListView\(\)', 'CheckBoxes = true', 'ReadOnly = true', 
 if (-not $project.SelectSingleNode("//Compile[@Update='ChatCorpusForm.cs']/SubType[text()='Form']") -or
     -not $project.SelectSingleNode("//Compile[@Update='ChatCorpusForm.Designer.cs']/DependentUpon[text()='ChatCorpusForm.cs']") -or
     -not $project.SelectSingleNode("//EmbeddedResource[@Update='ChatCorpusForm.resx']/DependentUpon[text()='ChatCorpusForm.cs']")) { throw 'Missing corpus VS nesting' }
-if ($mainDesigner -notmatch 'tabSettings.Controls.Add\(btnChatCorpus\)' -or $main -notmatch 'new ChatCorpusForm\(') { throw 'Missing corpus entry point' }
+if ($mainDesigner -notmatch 'contentSettings.Controls.Add\(btnChatCorpus\)' -or $main -notmatch 'new ChatCorpusForm\(') { throw 'Missing corpus entry point' }
 if ($main -notmatch 'Task.Run\(' -or $main -notmatch 'evidenceSelectionVersion' -or $main -notmatch 'PeersFingerprint' -or $main -notmatch 'ReferenceEquals\(snapshot, baseline\)') { throw 'Missing saved-evidence worker guards' }
 if ($form -match 'LmStudio|HttpClient|SemanticReview|CandidateReview|SaveSession|IsolatedPackStager|ReviewExporter|Process\.|\.SaveCandidate') { throw 'Corpus UI crossed offline inspection boundary' }
 if ($form -notmatch 'selected.Count == 20' -or $form -notmatch 'SOURCE_MATERIAL_ONLY' -or $form -notmatch 'Task.Run\(') { throw 'Missing bounded selection/worker contract' }

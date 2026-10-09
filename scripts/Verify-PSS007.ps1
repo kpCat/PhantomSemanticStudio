@@ -21,7 +21,7 @@ foreach ($required in @('chkMentor.Checked = false', 'chkContextReviewed.Checked
     if ($body -notmatch [regex]::Escape($required)) { throw ('Missing lab UI contract: ' + $required) }
 }
 $mainDesigner = Get-Content -LiteralPath (Join-Path $root 'src/PhantomSemanticStudio.WinForms/MainForm.Designer.cs') -Raw -Encoding UTF8
-if ($mainDesigner -notmatch 'tabChat.Controls.Add\(btnDialogueLab\)' -or $mainDesigner -notmatch 'btnDialogueLab.Click \+= DialogueLab_Click') { throw 'Missing lab entry in existing tab' }
+if ($mainDesigner -notmatch 'contentChat.Controls.Add\(btnDialogueLab\)' -or $mainDesigner -notmatch 'btnDialogueLab.Click \+= DialogueLab_Click') { throw 'Missing lab entry in existing tab' }
 foreach ($path in @(Get-ChildItem -LiteralPath (Join-Path $root 'src/PhantomSemanticStudio.Core') -Filter '*.cs') + @(Get-ChildItem -LiteralPath (Join-Path $root 'src/PhantomSemanticStudio.WinForms') -Filter '*.cs')) {
     $content = Get-Content -LiteralPath $path.FullName -Raw -Encoding UTF8
     if ($content -match 'Process\.Start|ProcessStartInfo|DllImport|Invoke-Expression|/models/load|/models/unload|ExtractToDirectory') { throw ('Forbidden runtime execution/lifecycle: ' + $path.Name) }

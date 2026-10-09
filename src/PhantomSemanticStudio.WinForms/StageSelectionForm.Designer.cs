@@ -3,6 +3,8 @@ namespace PhantomSemanticStudio.WinForms;
 
 partial class StageSelectionForm
 {
+    private System.Windows.Forms.TableLayoutPanel layoutRoot = null!;
+    private System.Windows.Forms.Panel contentRoot = null!;
     private System.ComponentModel.IContainer? components = null;
 
     protected override void Dispose(bool disposing)
@@ -33,7 +35,27 @@ partial class StageSelectionForm
         lblSafety = new System.Windows.Forms.Label();
         btnCreate = new System.Windows.Forms.Button();
         btnCancel = new System.Windows.Forms.Button();
+        layoutRoot = new System.Windows.Forms.TableLayoutPanel();
+        contentRoot = new System.Windows.Forms.Panel();
+        layoutRoot.SuspendLayout();
+        contentRoot.SuspendLayout();
         SuspendLayout();
+        layoutRoot.Name = "layoutRoot";
+        layoutRoot.Size = new System.Drawing.Size(1120, 780);
+        layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        layoutRoot.AutoScroll = true;
+        layoutRoot.ColumnCount = 1;
+        layoutRoot.RowCount = 1;
+        layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+        layoutRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Name = "contentRoot";
+        contentRoot.Size = new System.Drawing.Size(1120, 780);
+        contentRoot.MinimumSize = new System.Drawing.Size(1120, 780);
+        contentRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+        contentRoot.Margin = new System.Windows.Forms.Padding(0);
+        contentRoot.Padding = new System.Windows.Forms.Padding(0);
+
         // lblInstructions
         lblInstructions.Name = "lblInstructions";
         lblInstructions.Location = new System.Drawing.Point(16, 12);
@@ -167,27 +189,33 @@ partial class StageSelectionForm
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         Font = new System.Drawing.Font("Segoe UI", 10F);
         ClientSize = new System.Drawing.Size(1120, 780);
-        MinimumSize = new System.Drawing.Size(1136, 680);
+        MinimumSize = new System.Drawing.Size(760, 420);
         StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
         ShowInTaskbar = false;
         MinimizeBox = false;
         MaximizeBox = false;
         Name = "StageSelectionForm";
         Text = "Выбор партии XML-предложения";
-        Controls.Add(lblInstructions);
-        Controls.Add(lblFilter);
-        Controls.Add(txtFilter);
-        Controls.Add(lblAvailable);
-        Controls.Add(listCandidates);
-        Controls.Add(txtDetails);
-        Controls.Add(lblSelected);
-        Controls.Add(txtSelected);
-        Controls.Add(lblCount);
-        Controls.Add(txtError);
-        Controls.Add(lblSafety);
-        Controls.Add(btnCreate);
-        Controls.Add(btnCancel);
+        contentRoot.Controls.Add(lblInstructions);
+        contentRoot.Controls.Add(lblFilter);
+        contentRoot.Controls.Add(txtFilter);
+        contentRoot.Controls.Add(lblAvailable);
+        contentRoot.Controls.Add(listCandidates);
+        contentRoot.Controls.Add(txtDetails);
+        contentRoot.Controls.Add(lblSelected);
+        contentRoot.Controls.Add(txtSelected);
+        contentRoot.Controls.Add(lblCount);
+        contentRoot.Controls.Add(txtError);
+        contentRoot.Controls.Add(lblSafety);
+        contentRoot.Controls.Add(btnCreate);
+        contentRoot.Controls.Add(btnCancel);
         FormClosing += Selection_FormClosing;
+        AutoScroll = false;
+        layoutRoot.Controls.Add(contentRoot, 0, 0);
+        Controls.Add(layoutRoot);
+        contentRoot.ResumeLayout(false);
+        layoutRoot.ResumeLayout(false);
+        layoutRoot.PerformLayout();
         ResumeLayout(false);
         PerformLayout();
     }

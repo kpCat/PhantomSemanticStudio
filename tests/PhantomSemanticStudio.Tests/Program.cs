@@ -13,6 +13,7 @@ internal static partial class Program
     [STAThread]
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--pss-009-layout") return Pss009Layout(args);
         if (args.Length > 0 && args[0] == "--pss-008-controls") return Pss008Controls();
         if (args.Length > 0 && args[0] == "--pss-008-c")
         { Pss008C(); Console.WriteLine($"RESULT: {passed} PASS; {failed} FAIL"); return failed == 0 ? 0 : 1; }
